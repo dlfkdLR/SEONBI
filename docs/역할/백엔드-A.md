@@ -243,7 +243,7 @@ async def check_and_count(session, client_id: str, call_type: str) -> None   # �
 - **모델(8장) 변경은 B를 거친다.** 직접 고치지 않는다(11.2, 15.1).
 - **엔진 코드는 테스트 없이 머지하지 않는다**(13.2).
 - 린트: `ruff` + `mypy`(engine은 strict)(13.2).
-- 브랜치 `feat/<기능>` → `dev`, PR 리뷰 1명 이상, Conventional Commits(13.2).
+- 브랜치 `a/<작업-이름>`(예: `a/engine-tests`) → `dev`, PR 리뷰 1명 이상, 하루 한 번 이상 `dev` 받아오기, Conventional Commits(13.2, `docs/개발환경-세팅.md` 0번).
 - 발표 자료에는 실제 측정값만 쓴다. "범용 AI는 틀린다"고 미리 단정하지 않는다(1.5).
 
 ---

@@ -281,7 +281,7 @@ QUESTIONING/ANALYZED에서 B가 따로 챙길 규칙: 14번 `RANKING_UPDATED` �
 **코드·협업 (13.2)**
 - 린트·포맷: `ruff` + `mypy`.
 - 커밋: Conventional Commits (`feat:`, `fix:`, `docs:` …).
-- 브랜치: `main` ← `dev` ← `feat/<기능>`, PR 리뷰 1명 이상.
+- 브랜치: `main` ← `dev` ← `b/<작업-이름>`(예: `b/models`), PR 리뷰 1명 이상. 모델·`core/`·스텁은 다른 사람이 기다리므로 작게 먼저 `dev`에 합친다(13.2, `docs/개발환경-세팅.md` 0번).
 - API 변경 시 OpenAPI 타입 재생성 커밋 포함.
 
 ---
