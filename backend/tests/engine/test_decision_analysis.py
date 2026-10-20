@@ -40,8 +40,11 @@ def test_change_condition_is_exact_crossing(seed):
             continue
         U = V @ _shift(mean, c.criterion, c.threshold)
         assert abs(U[top] - U[c.new_top]) < 1e-9  # 전환점에서 두 점수가 같다
-        assert U.max() <= U[top] + 1e-9  # 새 1위가 다른 선택지보다도 앞선다
         assert (c.threshold > c.current) == (c.direction == "increase")
+        # 5.8: 새 1위가 전체 1위인지는 전환점 ± 0.001에서 확인한다
+        # (그 사이에 다른 선택지와 순위가 바뀔 수 있어 U.max() == U[top]까지는 요구하지 않는다)
+        probe = c.threshold + (0.001 if c.direction == "increase" else -0.001)
+        assert int(np.argmax(V @ _shift(mean, c.criterion, min(max(probe, 0.0), 1.0)))) == c.new_top
 
 
 def test_no_change_when_one_option_dominates():
