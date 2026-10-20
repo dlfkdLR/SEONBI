@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -23,12 +24,20 @@ INTERVAL = (0.10, 0.90)  # 기준별 신뢰 구간 분위수
 TIE_TOL = 1e-12
 
 
+AnswerOrigin = Literal["engine", "free_text"]
+
+
 @dataclass(frozen=True)
 class Answer:
-    """유효한 답변 하나 (is_valid=false 답변은 넘기지 않는다)."""
+    """유효한 답변 하나 (is_valid=false 답변은 넘기지 않는다).
+
+    origin이 free_text인 답변은 자유 입력(29번)으로 만든 가상 슬라이더 답변이다. 추정에는 쓰지만
+    질문 수·질문 순서 규칙에는 세지 않는다(4.2, 7.3 29번).
+    """
 
     spec: QuestionSpec
     response: Response
+    origin: AnswerOrigin = "engine"
 
 
 @dataclass(frozen=True)

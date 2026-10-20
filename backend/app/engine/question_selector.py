@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Mapping, Sequence
+from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass
 from itertools import combinations
 
@@ -35,10 +35,14 @@ def next_question(
     history: Sequence[QuestionSpec],
     *,
     scales: Mapping[str, Scale],
+    covered: Collection[int] | None = None,
 ) -> QuestionSpec | None:
-    """다음 질문. 물어볼 기준 쌍이 없으면 None.
+    """다음 질문. 물어볼 기준 쌍이 없으면 None. 선택 규칙은 5.5의 4번 항목.
 
-    history는 지금까지 낸 질문(답변·건너뛰기 포함)을 순서대로 담는다.
+    history는 지금까지 낸 **서버 질문**(답변·건너뛰기 포함)을 순서대로 담는다. 자유 입력으로 만든 가상 질문은
+    넣지 않는다 — 질문 번호, 같은 유형 연속, 상황형 할당 차례 계산에서 빠져야 하기 때문이다.
+    covered는 유효 답변(가상 답변 포함, "잘 모르겠어요" 제외)에 한 번이라도 나온 기준 번호다. 주지 않으면
+    history의 질문에 나온 기준으로 대신한다.
     """
     active = active_criteria(V)
     if len(active) < 2:
@@ -50,12 +54,16 @@ def next_question(
     candidates = score_candidates(post, V, criteria, history, scales=scales)
     if not candidates:
         return None
+    seen = set(covered) if covered is not None else {k for q in history for k in (q.a, q.b)}
+    fresh = {k for k in active if k not in seen}
+    # 규칙 2: 아직 답변에 나온 적 없는 기준이 있으면 그 기준이 들어간 후보 안에서 고른다
+    focused = [c for c in candidates if c.spec.a in fresh or c.spec.b in fresh] if fresh else candidates
     if n >= SCENARIO_QUOTA_FROM and n % 2 == 0:
-        scenario = _pick_scenario(candidates, history)
+        scenario = _pick_scenario(focused, history)  # 규칙 4·5: 후보가 없으면 규칙 2로 넘어간다
         if scenario is not None:
             return scenario.spec
-    allowed = [c for c in candidates if _allowed(c.spec, history, len(active))]
-    pool = allowed or candidates
+    allowed = [c for c in focused if _allowed(c.spec, history, len(active))]
+    pool = allowed or focused
     return max(pool, key=lambda c: c.eig).spec  # 동점이면 먼저 생성된 후보
 
 
