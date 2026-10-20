@@ -179,7 +179,30 @@ class FakeUsageStore(UsageStore):
         self.records.append(record)
 
 
-@dataclass(frozen=True)
+class FakeEstimateSnapshots:
+    def __init__(self) -> None:
+        self.rows: list[dict[str, Any]] = []
+
+    async def add(
+        self,
+        decision_id: str,
+        after_answer_count: int,
+        weights: dict[str, float],
+        top_probability: float,
+        entropy: float,
+    ) -> None:
+        self.rows.append(
+            {
+                "decision_id": decision_id,
+                "after_answer_count": after_answer_count,
+                "weights": weights,
+                "top_probability": top_probability,
+                "entropy": entropy,
+            }
+        )
+
+
+@dataclass(frozen=True, kw_only=True)
 class FakeStores(Stores):
     state: FakeState
 

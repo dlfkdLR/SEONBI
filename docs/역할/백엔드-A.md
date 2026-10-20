@@ -166,53 +166,53 @@ async def check_and_count(session, client_id: str, call_type: str) -> None   # �
 
 ### 서비스·상태 전이
 - [ ] B·C와 이 문서 5절 인터페이스(상태 전이·엔진 입력·LLM 호출·가상 선호 등록) 시그니처 합의
-- [ ] `engine_bridge`: DB 행 → 엔진 입력, 엔진 결과 → API ID 변환, 질문별 `origin` 전달
-- [ ] 상태 전이 서비스(4.2): 시작·종료(37·32·35)·추가 라운드·기준 추가/삭제 훅·확정
-- [ ] `QUESTIONING` 중 기준 추가 시 `question_limit = max(현재 상한, 현재 답변 수 + 3)`
-- [ ] 4.2 API별 상태 제약 표를 31~46 공통 검사로 구현
-- [ ] 척도 고정(`scale_min/scale_max/scale_frozen`)을 31번 최초 호출 때 저장
-- [ ] 질문 `spec`/`display`/`phrasing_source`/`origin`/`info_gain` 저장, 템플릿 문장 생성(5.5 문장 템플릿, 5.1 범위 표기)
-- [ ] 29번용 가상 `slider_pair` 질문·답변 등록 함수(`origin = free_text`, `preference_kind = stated`, DRAFT 허용)
-- [ ] 분석 캐시: `analysis_results.decision_version` 비교 → 무효면 재계산·저장
+- [x] `engine_bridge`: DB 행 → 엔진 입력, 엔진 결과 → API ID 변환, 질문별 `origin` 전달
+- [x] 상태 전이 서비스(4.2): 시작·종료(37·32·35)·추가 라운드·기준 추가/삭제 훅·확정
+- [x] `QUESTIONING` 중 기준 추가 시 `question_limit = max(현재 상한, 현재 답변 수 + 3)`
+- [x] 4.2 API별 상태 제약 표를 31~46 공통 검사로 구현
+- [x] 척도 고정(`scale_min/scale_max/scale_frozen`)을 31번 최초 호출 때 저장
+- [x] 질문 `spec`/`display`/`phrasing_source`/`origin`/`info_gain` 저장, 템플릿 문장 생성(5.5 문장 템플릿, 5.1 범위 표기)
+- [x] 29번용 가상 `slider_pair` 질문·답변 등록 함수(`origin = free_text`, `preference_kind = stated`, DRAFT 허용)
+- [x] 분석 캐시: `analysis_results.decision_version` 비교 → 무효면 재계산·저장
 
 ### 질문 API (31~38)
-- [ ] 7.3 예시 응답을 돌려주는 스텁 라우터 먼저 올리기(프론트 연결용, 15장 병렬 원칙)
-- [ ] 31 질문 시작 (최초·멱등·추가 라운드·오류, `expectedRange` 계산)
-- [ ] 32 다음 질문 (미답변 우선, 종료 판단 시 `ANALYZED` 전이, ANALYZED·FINALIZED는 `done: true`, DRAFT `422`)
-- [ ] 37 답변 제출 (형식 검증 → 재추정 → `estimate` + `next`, 종료 시 ANALYZED)
-- [ ] 33 종료 판단 조회
-- [ ] 35 조기 종료 (P1, `lowConfidence`)
-- [ ] 36 답변 목록(`question.origin`), 38 답변 수정 (P1, ANALYZED에서도 재추정·상태 유지)
-- [ ] 34 진행률 (P2)
-- [ ] (P1) `estimate_snapshots` 답변마다 기록
+- [x] 7.3 예시 응답을 돌려주는 스텁 라우터 먼저 올리기(프론트 연결용, 15장 병렬 원칙) — 스텁 대신 메모리 저장소로 동작하는 실제 라우터(31~46)를 만들었다. DB 연결은 B의 `get_snapshot`·`get_stores` 구현으로
+- [x] 31 질문 시작 (최초·멱등·추가 라운드·오류, `expectedRange` 계산)
+- [x] 32 다음 질문 (미답변 우선, 종료 판단 시 `ANALYZED` 전이, ANALYZED·FINALIZED는 `done: true`, DRAFT `422`)
+- [x] 37 답변 제출 (형식 검증 → 재추정 → `estimate` + `next`, 종료 시 ANALYZED)
+- [x] 33 종료 판단 조회
+- [x] 35 조기 종료 (P1, `lowConfidence`)
+- [x] 36 답변 목록(`question.origin`), 38 답변 수정 (P1, ANALYZED에서도 재추정·상태 유지)
+- [x] 34 진행률 (P2)
+- [x] (P1) `estimate_snapshots` 답변마다 기록 — `EstimateSnapshotStore` 포트(없으면 건너뜀), 실제 DB 구현은 B의 모델이 생긴 뒤
 
 ### 분석 API (39~46)
-- [ ] 41 순위, 40 가중치, 44 안정성(`level`·`competitors`·`text`), 45 전환 조건 (P0)
-- [ ] 39 종합 — 위 결과 + 제외 선택지 + `lowConfidence` + 설명(템플릿 먼저)
-- [ ] 상태 처리: `provisional`, QUESTIONING 답변 0개·DRAFT `422 NOT_READY`, FINALIZED 조회 허용
-- [ ] 42 조건별 점수, 43 민감도, 46 시뮬레이션 (P1)
-- [ ] 39에 숨은 선호(5.6)와 `strength` 계산 붙이기, 40에 `statedRank`·`revealedRank` (P1)
+- [x] 41 순위, 40 가중치, 44 안정성(`level`·`competitors`·`text`), 45 전환 조건 (P0)
+- [x] 39 종합 — 위 결과 + 제외 선택지 + `lowConfidence` + 설명(템플릿 먼저)
+- [x] 상태 처리: `provisional`, QUESTIONING 답변 0개·DRAFT `422 NOT_READY`, FINALIZED 조회 허용
+- [x] 42 조건별 점수, 43 민감도, 46 시뮬레이션 (P1)
+- [x] 39에 숨은 선호(5.6)와 `strength` 계산 붙이기, 40에 `statedRank`·`revealedRank` (P1)
 
 ### AI 계층
-- [ ] `LLMClient` 인터페이스, `LLMRouter`(`제공자:모델명` 파싱, `LLM_ROUTES`, `LLM_FALLBACK_MODELS`)
-- [ ] Fake 어댑터 (카테고리별 기본 기준 목록 = 응답 데이터, 6.2)
-- [ ] 서버 시작 시 설정된 모델의 키가 없으면 오류로 멈추기(6.4)
-- [ ] 공통 검증: Pydantic 재검증 → 1회 재시도 → fallback(6.3). `extract_conditions`는 fallback 없이 `503 AI_UNAVAILABLE`
-- [ ] 호출 상한(18·23·28만) + `ai_usage_logs` 기록(원문 저장 안 함), 23번은 상한 초과·실패 시 기본 기준 목록
-- [ ] 자동 호출(문장 다듬기·장단점 요약·결과 설명) 결과 캐시 — 같은 질문·같은 분석 버전에서 재호출 안 함
-- [ ] 6종 호출 함수와 제공자 중립 프롬프트(`<user_input>` 분리, 6.3), `extract_conditions` 출력은 28번 추출 항목 형식
-- [ ] `phrase_question` 출력 → 질문 객체 필드 매핑, 서버 값과 다른 숫자가 있으면 버리고 템플릿
-- [ ] `explain_result` 숫자 검증(퍼센트·금액·수치·단계 라벨) → 불일치 시 템플릿
-- [ ] Gemini 어댑터(`response_schema` 변환) + 녹화 응답 테스트
-- [ ] 32·37에 `phrase_question`, 39에 `summarize_options`·`explain_result` 연결 (실패해도 템플릿으로 흐름 유지)
+- [x] `LLMClient` 인터페이스, `LLMRouter`(`제공자:모델명` 파싱, `LLM_ROUTES`, `LLM_FALLBACK_MODELS`)
+- [x] Fake 어댑터 (카테고리별 기본 기준 목록 = 응답 데이터, 6.2)
+- [x] 서버 시작 시 설정된 모델의 키가 없으면 오류로 멈추기(6.4) — `LLMRouter.validate_settings()` 완료, 시작 때 호출하는 코드는 B의 `main.py`가 부른다
+- [x] 공통 검증: Pydantic 재검증 → 1회 재시도 → fallback(6.3). `extract_conditions`는 fallback 없이 `503 AI_UNAVAILABLE`
+- [x] 호출 상한(18·23·28만) + `ai_usage_logs` 기록(원문 저장 안 함), 23번은 상한 초과·실패 시 기본 기준 목록 — `QuotaGuard`·`UsageRecorder` 완료(`UsageStore` 포트 기준), 실제 DB 구현은 B의 모델이 생긴 뒤 연결
+- [x] 자동 호출(문장 다듬기·장단점 요약·결과 설명) 결과 캐시 — 같은 질문·같은 분석 버전에서 재호출 안 함
+- [x] 6종 호출 함수와 제공자 중립 프롬프트(`<user_input>` 분리, 6.3), `extract_conditions` 출력은 28번 추출 항목 형식
+- [x] `phrase_question` 출력 → 질문 객체 필드 매핑, 서버 값과 다른 숫자가 있으면 버리고 템플릿
+- [x] `explain_result` 숫자 검증(퍼센트·금액·수치·단계 라벨) → 불일치 시 템플릿
+- [x] Gemini 어댑터(`response_schema` 변환) — 스텁 클라이언트 테스트까지 완료. 실제 키로 받은 응답 녹화 테스트는 키가 `.env`에 들어간 뒤
+- [x] 32·37에 `phrase_question`, 39에 `summarize_options`·`explain_result` 연결 (실패해도 템플릿으로 흐름 유지) — `ai_glue.make_phraser`와 `get_analysis(llm=...)`
 
 ### 테스트·실험
 - [x] 엔진 단위 테스트를 14장 기준으로 채우기 (hypothesis 포함)
 - [x] 5.12 예시 수치 재현 테스트 (N=4,000, 시드 42)
-- [ ] 질문·분석 API 통합 테스트 (상태 전이, 4.2 상태 제약 표, 오류 코드)
-- [ ] AI 계층 테스트 (Fake, 스키마 위반·관련 없음·fallback)
-- [ ] 가상 사용자 시뮬레이션 노트북: 구매형·진로형, EIG vs 랜덤 비교(14)
-- [ ] PyMC NUTS 교차검증 (±0.03)
+- [x] 질문·분석 API 통합 테스트 (상태 전이, 4.2 상태 제약 표, 오류 코드) — 메모리 저장소 기준 HTTP 테스트 완료, 실제 DB 기준 통합 테스트는 B의 기반이 생긴 뒤
+- [x] AI 계층 테스트 (Fake, 스키마 위반·관련 없음·fallback)
+- [x] 가상 사용자 시뮬레이션 노트북: 구매형·진로형, EIG vs 랜덤 비교(14)
+- [x] PyMC NUTS 교차검증 (±0.03)
 - [ ] 범용 AI 비교 실험 3종: 일관성·전환점 정확도·질문 효율(1.5)
 - [ ] 파일럿 결과로 5.13 "파일럿" 파라미터(모듈 상수) 보정
 

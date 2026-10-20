@@ -53,6 +53,7 @@ from app.engine.question_selector import next_question as engine_next_question
 from app.engine.stopping import (
     EXTRA_ROUND_QUESTIONS,
     StopReason,
+    counted_answers,
     extra_round_limit,
     max_questions,
     raised_limit,
@@ -502,6 +503,7 @@ async def submit_answer(
     ctx = await _reload(ctx, stores)
     _, s = _posterior(ctx.inp)
     estimate = ah.estimate_payload(s, ctx.inp.V, ctx.inp.criterion_ids)
+    await _record_snapshot(stores, snapshot.id, ctx, s)
     nxt = await _next_payload(ctx, stores, phraser)
     return {"answer": _answer_obj(row), "estimate": estimate, "next": nxt}
 
@@ -522,7 +524,21 @@ async def edit_answer(snapshot: DecisionSnapshot, stores: Stores, answer_id: str
     await stores.decisions.bump_version(snapshot.id)
     ctx = await _reload(ctx, stores)
     _, s = _posterior(ctx.inp)
+    await _record_snapshot(stores, snapshot.id, ctx, s)
     return {"estimate": ah.estimate_payload(s, ctx.inp.V, ctx.inp.criterion_ids)}
+
+
+async def _record_snapshot(stores: Stores, decision_id: str, ctx: _Ctx, s: Summary) -> None:
+    """estimate_snapshots(P1)에 이번 추정을 남긴다. 저장소가 없으면 건너뛴다."""
+    if stores.estimate_snapshots is None:
+        return
+    await stores.estimate_snapshots.add(
+        decision_id,
+        counted_answers(ctx.inp.answers),
+        {cid: float(w) for cid, w in zip(ctx.inp.criterion_ids, s.mean, strict=True)},
+        ah.top_probability(s, ctx.inp.V),
+        float(s.entropy),
+    )
 
 
 def _spec_of(question: QuestionRow, ctx: _Ctx) -> Any:

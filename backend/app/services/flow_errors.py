@@ -17,6 +17,9 @@ FlowErrorCode = Literal[
     "DECISION_FINALIZED",
     "QUESTION_ALREADY_ANSWERED",
     "NOT_READY",
+    "CLIENT_ID_REQUIRED",
+    "OPTION_EXCLUDED",
+    "AI_QUOTA_EXCEEDED",
 ]
 
 _VIOLATION_MESSAGES: dict[str, str] = {

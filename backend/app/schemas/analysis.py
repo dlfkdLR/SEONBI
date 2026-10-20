@@ -208,7 +208,7 @@ class AnalysisResponse(CamelModel):
 
 
 # --- 46 ----------------------------------------------------------------------------------------
-class SimulationWeight(CamelModel):
+class SimulationWeight(StrictCamelModel):
     criterion_id: str
     weight: float
 

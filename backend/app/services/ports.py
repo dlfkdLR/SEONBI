@@ -201,6 +201,19 @@ class UsageStore(Protocol):
     async def add(self, record: UsageRecord) -> None: ...
 
 
+class EstimateSnapshotStore(Protocol):
+    """estimate_snapshots (8.1, P1): 답변마다 남기는 추정 기록. 검증·확신도 그래프용이다."""
+
+    async def add(
+        self,
+        decision_id: str,
+        after_answer_count: int,
+        weights: dict[str, float],
+        top_probability: float,
+        entropy: float,
+    ) -> None: ...
+
+
 @dataclass(frozen=True)
 class Stores:
     """한 요청에서 쓰는 저장소 묶음."""
@@ -210,3 +223,4 @@ class Stores:
     analysis: AnalysisCache
     final_choices: FinalChoiceStore
     usage: UsageStore
+    estimate_snapshots: EstimateSnapshotStore | None = None  # P1. 없으면 기록하지 않는다

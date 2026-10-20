@@ -836,3 +836,24 @@ def test_scenario_questions_store_ids_not_indices():
             assert isinstance(spec, ScenarioSpec)
 
     run(go())
+
+
+def test_estimate_snapshots_recorded_per_answer_when_store_given():
+    """8.1 estimate_snapshots(P1): 답변을 낼 때마다 추정을 남긴다. 저장소가 없으면 그냥 지나간다."""
+
+    from fakes import FakeEstimateSnapshots
+
+    snapshot = laptop_snapshot()
+    stores = make_stores(snapshot)
+    snaps = FakeEstimateSnapshots()
+    with_snaps = replace(stores, estimate_snapshots=snaps)
+    started = asyncio.run(qf.start_questions(snapshot, with_snaps))
+    live = with_snaps.snapshot()
+    out = asyncio.run(qf.submit_answer(live, with_snaps, started["question"]["id"], {"value": -2}))
+    assert out["estimate"]["weights"]
+    assert len(snaps.rows) == 1 and snaps.rows[0]["after_answer_count"] == 1
+    assert abs(sum(snaps.rows[0]["weights"].values()) - 1) < 1e-6 and 0 <= snaps.rows[0]["top_probability"] <= 1
+    # 저장소가 없을 때도 같은 흐름이 돈다
+    plain = make_stores(snapshot)
+    started2 = asyncio.run(qf.start_questions(snapshot, plain))
+    asyncio.run(qf.submit_answer(plain.snapshot(), plain, started2["question"]["id"], {"value": -2}))
