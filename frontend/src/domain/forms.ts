@@ -25,11 +25,15 @@ export function validationErrors(d: Decision, step = 4): string[] {
     if (d.criteria.some(c => !c.name.trim())) errors.push('평가 기준 이름을 입력해주세요.');
     if (new Set(d.criteria.map(c => c.name.trim())).size !== d.criteria.length) errors.push('기준 이름은 서로 달라야 해요.');
   }
-  if (step >= 3) for (const o of d.options) for (const c of d.criteria) {
-    const v = d.values[o.id]?.[c.id];
-    const valid = c.type === 'boolean' ? typeof v === 'boolean' : typeof v === 'number' && Number.isFinite(v)
-      && (c.type !== 'rating' || (Number.isInteger(v) && v >= 1 && v <= (c.inputMode === 'rank' ? d.options.length : c.levels.length)));
-    if (!valid) errors.push(`${o.name}의 ${c.name} 값을 입력해주세요.`);
+  if (step >= 3) for (const o of d.options) {
+    // 칸마다 한 문장씩 늘어놓지 않고, 선택지별로 비어 있는 기준 이름만 묶어서 알려준다
+    const empty = d.criteria.filter(c => {
+      const v = d.values[o.id]?.[c.id];
+      const valid = c.type === 'boolean' ? typeof v === 'boolean' : typeof v === 'number' && Number.isFinite(v)
+        && (c.type !== 'rating' || (Number.isInteger(v) && v >= 1 && v <= (c.inputMode === 'rank' ? d.options.length : c.levels.length)));
+      return !valid;
+    });
+    if (empty.length) errors.push(`${o.name || '이름 없는 선택지'}: ${empty.map(c => c.name).join(', ')} 값을 입력해주세요.`);
   }
   return errors;
 }
