@@ -75,8 +75,8 @@ export function useQuestionProgress(id: string) { return useQuery({ queryKey: qu
 export function useAnswers(id: string) { return useQuery({ queryKey: queryKeys.answers(id), queryFn: () => questions.listAnswers(id), enabled: Boolean(id) }); }
 export function useStartQuestionsMutation(id: string) { const c = useQueryClient(); return useMutation({ mutationFn: () => questions.startQuestions(id), onSuccess: () => invalidateQuestionFlow(c, id) }); }
 export function useStopQuestionsMutation(id: string) { const c = useQueryClient(); return useMutation({ mutationFn: () => questions.stopQuestions(id), onSuccess: () => invalidateQuestionFlow(c, id) }); }
-export function useSubmitAnswerMutation(id: string) { const c = useQueryClient(); return useMutation({ mutationFn: (input: { questionId: string; response: Record<string, unknown> }) => questions.submitAnswer(id, input), onSuccess: () => invalidateQuestionFlow(c, id) }); }
-export function useEditAnswerMutation(id: string) { const c = useQueryClient(); return useMutation({ mutationFn: ({ answerId, response }: { answerId: string; response: Record<string, unknown> }) => questions.editAnswer(id, answerId, response), onSuccess: () => invalidateQuestionFlow(c, id) }); }
+export function useSubmitAnswerMutation(id: string) { const c = useQueryClient(); return useMutation({ mutationFn: (input: { questionId: string; response: questions.AnswerValue }) => questions.submitAnswer(id, input), onSuccess: () => invalidateQuestionFlow(c, id) }); }
+export function useEditAnswerMutation(id: string) { const c = useQueryClient(); return useMutation({ mutationFn: ({ answerId, response }: { answerId: string; response: questions.AnswerValue }) => questions.editAnswer(id, answerId, response), onSuccess: () => invalidateQuestionFlow(c, id) }); }
 
 // Analysis and result queries
 export function useAnalysis(id: string) { return useQuery({ queryKey: queryKeys.analysis(id), queryFn: () => analysis.getAnalysis(id), enabled: Boolean(id) }); }

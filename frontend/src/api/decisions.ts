@@ -6,7 +6,9 @@ export interface Option { id: string; name: string; description?: string; url?: 
 export interface Criterion { id: string; name: string; type: "numeric" | "rating" | "boolean"; direction?: string; unit?: string; levels?: string[]; inputMode?: "score" | "rank"; scaleMin?: number; scaleMax?: number; scaleFrozen?: boolean; source?: string }
 export interface Condition { id?: string; kind: "threshold" | "required_tag"; criterionId?: string; operator?: "<=" | ">=" | "=="; value?: number | boolean; label?: string; satisfiedBy?: string[]; source?: string }
 export interface DecisionSummary { id: string; title: string; status: DecisionStatus; optionCount: number; finalChoice?: { optionId: string; name: string } | null; updatedAt: string }
-export interface DecisionDetail { id: string; title: string; description?: string; category: DecisionCategory; status: DecisionStatus; options: Option[]; criteria: Criterion[]; values: Array<{ optionId: string; criterionId: string; value: number | boolean }>; rankings: Array<{ criterionId: string; order: string[][] }>; conditions: Condition[]; readiness: { canStartQuestions: boolean; missing: string[] } }
+export interface DecisionDetail { id: string; title: string; description?: string; category: DecisionCategory; status: DecisionStatus; options: Option[]; criteria: Criterion[]; values: Array<{ optionId: string; criterionId: string; value: number | boolean }>; rankings: Array<{ criterionId: string; order: string[][] }>; conditions: Condition[]; readiness: { canStartQuestions: boolean; missing: string[] }; createdAt: string; updatedAt: string }
+/** 9번 응답: 기준·값·조건·readiness 없이 생성 직후의 결정 요약만 돌려준다. */
+export interface CreatedDecision { id: string; title: string; description?: string | null; category: DecisionCategory; status: DecisionStatus; options: Option[]; createdAt: string; updatedAt: string }
 export interface DecisionsResponse { items: DecisionSummary[]; nextCursor?: string | null }
 export interface CreateDecisionRequest { title: string; description?: string; category: DecisionCategory; options?: Array<{ name: string; description?: string; url?: string }> }
 export interface PatchDecisionRequest { title?: string; description?: string; category?: DecisionCategory }
@@ -25,7 +27,7 @@ export function listDecisions(params: { status?: DecisionStatus; cursor?: string
   return requestJson<DecisionsResponse>(`/decisions${suffix}`);
 }
 export function getDecision(decisionId: string) { return requestJson<DecisionDetail>(decisionPath(decisionId)); }
-export function createDecision(input: CreateDecisionRequest) { return requestJson<DecisionDetail>("/decisions", { method: "POST", body: JSON.stringify(input) }); }
+export function createDecision(input: CreateDecisionRequest) { return requestJson<CreatedDecision>("/decisions", { method: "POST", body: JSON.stringify(input) }); }
 export function updateDecision(decisionId: string, input: PatchDecisionRequest) { return requestJson<DecisionDetail>(decisionPath(decisionId), { method: "PATCH", body: JSON.stringify(input) }); }
 export function deleteDecision(decisionId: string) { return requestVoid(decisionPath(decisionId), { method: "DELETE" }); }
 export function duplicateDecision(decisionId: string, title?: string) {
