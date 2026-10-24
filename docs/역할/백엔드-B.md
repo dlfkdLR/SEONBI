@@ -195,6 +195,8 @@ QUESTIONING/ANALYZED에서 B가 따로 챙길 규칙: 14번 `RANKING_UPDATED` �
 
 의존 순서대로 적었다. 위에서부터 진행한다.
 
+**작업 순서 (팀 합의, 2026-10-24)**: 개발은 기획서 v0.5대로 진행한다. **B의 Spring 골격과 JPA 엔티티가 `dev`에 가장 먼저 들어와야** A(서비스·컨트롤러·AI 이식)와 C(스텁 컨트롤러·타입 생성)가 시작할 수 있다. 그래서 7.1을 작게 먼저 끝내 `dev`에 합치고 A·C에게 알린다. 시작 전에 A와 파이썬 코드를 `engine-reference/`로 옮기는 시점을 맞춘다. A는 그동안 엔진 자바 이식을 하므로 B를 기다리지 않는다.
+
 ### 7.1 Spring 골격과 공통 환경 (A·C가 기다림)
 - [ ] **기존 파이썬 코드는 A가 `engine-reference/`로 옮긴다 — B는 `backend/`를 Spring 프로젝트로 시작하기 전에 A와 이동 시점을 맞춘다** (B가 파이썬 코드를 지우거나 옮기지 않는다)
 - [ ] Gradle 프로젝트 생성 (Kotlin DSL, Java 21, Spring Boot 3.x): Spring Web, Spring Data JPA, PostgreSQL 드라이버, Bean Validation, springdoc-openapi, Jackson, `uuid-creator`
