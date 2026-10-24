@@ -1,23 +1,47 @@
+# 선비 전체 구성: frontend(Nginx :80) → api(Spring Boot :8000) → db(PostgreSQL)
+# 값은 환경변수로 받는다. 로컬은 이 파일 옆 .env(.env.example 참고), Dokploy는 Environment 탭에 입력한다.
 services:
   db:
     image: postgres:16.4
     environment:
       POSTGRES_DB: seonbi
       POSTGRES_USER: seonbi
-      POSTGRES_PASSWORD: seonbi
-    ports: ["5432:5432"]
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD 를 설정하세요}
+    # DB 포트는 바깥에 열지 않는다 (같은 compose 네트워크의 api만 접속)
     volumes: ["seonbi-pgdata:/var/lib/postgresql/data"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U seonbi -d seonbi"]
       interval: 5s
       timeout: 3s
       retries: 20
+    restart: unless-stopped
   api:
     build: ./backend
-    env_file: ./backend/.env
-    ports: ["8000:8000"]
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/seonbi
+      SPRING_DATASOURCE_USERNAME: seonbi
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD 를 설정하세요}
+      LLM_MODEL_FAST: ${LLM_MODEL_FAST:-fake:default}
+      LLM_MODEL_QUALITY: ${LLM_MODEL_QUALITY:-fake:default}
+      LLM_FALLBACK_MODELS: ${LLM_FALLBACK_MODELS:-}
+      LLM_ROUTES: ${LLM_ROUTES:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      AI_DAILY_QUOTA_PER_CLIENT: ${AI_DAILY_QUOTA_PER_CLIENT:-50}
+      ENGINE_PARTICLES: ${ENGINE_PARTICLES:-4000}
+    expose:
+      - "8000"
     depends_on:
       db:
         condition: service_healthy
+    restart: unless-stopped
+  frontend:
+    build: ./frontend
+    expose:
+      - "80"
+    depends_on:
+      - api
+    restart: unless-stopped
 volumes:
   seonbi-pgdata:
