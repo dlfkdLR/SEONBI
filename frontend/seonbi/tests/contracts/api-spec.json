@@ -1,0 +1,182 @@
+[
+  {
+    "name": "결정 생성",
+    "method": "POST",
+    "path": "/api/v1/decisions",
+    "status": "초안"
+  },
+  {
+    "name": "결정 수정",
+    "method": "PATCH",
+    "path": "/api/v1/decisions/{decisionId}",
+    "status": "초안"
+  },
+  {
+    "name": "결정 삭제",
+    "method": "DELETE",
+    "path": "/api/v1/decisions/{decisionId}",
+    "status": "초안"
+  },
+  {
+    "name": "선택지 추가",
+    "method": "POST",
+    "path": "/api/v1/decisions/{decisionId}/options",
+    "status": "초안"
+  },
+  {
+    "name": "선택지 조회",
+    "method": "GET",
+    "path": "/api/v1/decisions/{decisionId}/options",
+    "status": "초안"
+  },
+  {
+    "name": "선택지 수정",
+    "method": "PATCH",
+    "path": "/api/v1/decisions/{decisionId}/options/{optionId}",
+    "status": "초안"
+  },
+  {
+    "name": "선택지 삭제",
+    "method": "DELETE",
+    "path": "/api/v1/decisions/{decisionId}/options/{optionId}",
+    "status": "초안"
+  },
+  {
+    "name": "평가 기준 추가",
+    "method": "POST",
+    "path": "/api/v1/decisions/{decisionId}/criteria",
+    "status": "초안"
+  },
+  {
+    "name": "평가 기준 조회",
+    "method": "GET",
+    "path": "/api/v1/decisions/{decisionId}/criteria",
+    "status": "초안"
+  },
+  {
+    "name": "평가 기준 수정",
+    "method": "PATCH",
+    "path": "/api/v1/decisions/{decisionId}/criteria/{criterionId}",
+    "status": "초안"
+  },
+  {
+    "name": "평가 기준 삭제",
+    "method": "DELETE",
+    "path": "/api/v1/decisions/{decisionId}/criteria/{criterionId}",
+    "status": "초안"
+  },
+  {
+    "name": "필수 조건 설정",
+    "method": "PATCH",
+    "path": "/api/v1/decisions/{decisionId}/conditions",
+    "status": "초안"
+  },
+  {
+    "name": "질문 시작",
+    "method": "POST",
+    "path": "/api/v1/decisions/{decisionId}/questions/start",
+    "status": "초안"
+  },
+  {
+    "name": "다음 질문 조회",
+    "method": "GET",
+    "path": "/api/v1/decisions/{decisionId}/questions/next",
+    "status": "초안"
+  },
+  {
+    "name": "질문 답변 제출",
+    "method": "POST",
+    "path": "/api/v1/decisions/{decisionId}/answers",
+    "status": "초안"
+  },
+  {
+    "name": "질문 답변 수정",
+    "method": "PATCH",
+    "path": "/api/v1/decisions/{decisionId}/answers/{answerId}",
+    "status": "초안"
+  },
+  {
+    "name": "질문 진행률 조회",
+    "method": "GET",
+    "path": "/api/v1/decisions/{decisionId}/questions/progress",
+    "status": "개발 선택사항"
+  },
+  {
+    "name": "질문 종료 판단",
+    "method": "GET",
+    "path": "/api/v1/decisions/{decisionId}/questions/status",
+    "status": "초안"
+  },
+  {
+    "name": "평가 기준 추천",
+    "method": "GET",
+    "path": "/api/v1/decisions/{decisionId}/criteria/recommendations",
+    "status": "초안"
+  },
+  {
+    "name": "선택지 추천",
+    "method": "GET",
+    "path": "/api/v1/decisions/{decisionId}/options/recommendations",
+    "status": "확인 필요"
+  },
+  {
+    "name": "분석 결과 조회",
+    "method": "GET",
+    "path": "/api/v1/decisions/{decisionId}/analysis",
+    "status": "초안"
+  },
+  {
+    "name": "가중치 조회",
+    "method": "GET",
+    "path": "/api/v1/decisions/{decisionId}/weights",
+    "status": "초안"
+  },
+  {
+    "name": "최종 순위 조회",
+    "method": "GET",
+    "path": "/api/v1/decisions/{decisionId}/rankings",
+    "status": "초안"
+  },
+  {
+    "name": "민감도 분석",
+    "method": "GET",
+    "path": "/api/v1/decisions/{decisionId}/sensitivity",
+    "status": "초안"
+  },
+  {
+    "name": "가중치 시뮬레이션",
+    "method": "POST",
+    "path": "/api/v1/decisions/{decisionId}/simulations",
+    "status": "초안"
+  },
+  {
+    "name": "결정 안정성 분석",
+    "method": "GET",
+    "path": "/api/v1/decisions/{decisionId}/stability",
+    "status": "초안"
+  },
+  {
+    "name": "결정 변경 조건 분석",
+    "method": "GET",
+    "path": "/api/v1/decisions/{decisionId}/change-conditions",
+    "status": "초안"
+  },
+  {
+    "name": "최종 결정 확정",
+    "method": "POST",
+    "path": "/api/v1/decisions/{decisionId}/final-choice",
+    "status": "초안"
+  },
+  {
+    "name": "결정 기록 조회",
+    "method": "GET",
+    "path": "/api/v1/decisions",
+    "status": "초안"
+  },
+  {
+    "name": "결정 결과 내보내기",
+    "method": "GET",
+    "path": "/api/v1/decisions/{decisionId}/export",
+    "status": "초안"
+  }
+]
