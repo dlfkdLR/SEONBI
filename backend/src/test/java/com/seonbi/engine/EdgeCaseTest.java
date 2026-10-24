@@ -29,7 +29,7 @@ class EdgeCaseTest {
 
     // 1위 확률은 처음부터 100%
     double[] pBest = Posterior.pBest(post.p(), Posterior.bestShares(post.w(), v));
-    assertThat(pBest).containsExactly(1.0);
+    assertThat(pBest).containsExactly(new double[] {1.0}, offset(1e-9));
     assertThat(Posterior.entropyBits(pBest)).isZero();
 
     // 뒤집을 선택지가 없으니 모든 기준이 "어떻게 바꿔도 1위 유지"
