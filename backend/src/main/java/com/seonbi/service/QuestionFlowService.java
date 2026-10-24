@@ -313,6 +313,48 @@ public class QuestionFlowService {
   }
 
   /**
+   * 이미 저장된 상황형 질문 중 AI가 "A안"처럼 내용 없는 설명을 남긴 것을 템플릿 문장으로 되돌린다. 고쳐진 값은 행에도 반영해 다음 조회부터는 검사만 하고 지나간다.
+   */
+  @SuppressWarnings("unchecked")
+  private void repairScenarioText(Ctx ctx, Question q) {
+    if (!"ab_scenario".equals(q.getType()) || q.getDisplay() == null) {
+      return;
+    }
+    Map<String, Object> display = deepCopy(q.getDisplay());
+    if (!(display.get("payload") instanceof Map<?, ?> payload)) {
+      return;
+    }
+    Map<String, Object> template;
+    try {
+      template =
+          QuestionText.buildQuestion(
+              EngineBridge.specFromMap(q.getSpec(), ctx.inp.criterionIds()),
+              ctx.inp.metas(),
+              ctx.inp.scales(),
+              ctx.inp.category());
+    } catch (RuntimeException e) {
+      return; // 템플릿을 못 만들면 저장된 값을 그대로 둔다
+    }
+    Map<String, Object> templatePayload = (Map<String, Object>) template.get("payload");
+    boolean changed = false;
+    for (String side : List.of("optionA", "optionB")) {
+      Object cur = payload.get(side);
+      Object base = templatePayload.get(side);
+      if (cur instanceof Map<?, ?> c && base instanceof Map<?, ?> b) {
+        String want = String.valueOf(b.get("description"));
+        Object have = c.get("description");
+        if (!(have instanceof String h) || !informative(want, h)) {
+          ((Map<String, Object>) cur).put("description", want);
+          changed = true;
+        }
+      }
+    }
+    if (changed) {
+      q.setDisplay(display);
+    }
+  }
+
+  /**
    * AI가 쓴 선택지 설명이 쓸 만한지 본다. "A안"처럼 내용이 없는 문장이 템플릿(기준 이름과 차이를 적은 문장)을 덮어쓰면 사용자가 무엇을 비교하는지 알 수 없다. 8자
    * 이상이고 템플릿에 나온 단어(기준 이름 등)를 하나라도 포함해야 받아들인다.
    */
@@ -370,6 +412,7 @@ public class QuestionFlowService {
       Ctx ctx, Function<Map<String, Object>, Optional<PhrasedQuestion>> phraser) {
     Optional<Question> pending = unanswered(ctx);
     if (pending.isPresent()) {
+      repairScenarioText(ctx, pending.get());
       return details("done", false, "question", questionObject(pending.get()));
     }
     Posterior post = fit(ctx.inp);
