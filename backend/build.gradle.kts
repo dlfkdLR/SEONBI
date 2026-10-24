@@ -44,3 +44,12 @@ spotless {
 }
 
 tasks.test { useJUnitPlatform() }
+
+// 가상 사용자 시뮬레이션 (개발기획서 14장). 예: ./gradlew simulate -Pargs="--scenario both --users 200 --seed 42"
+tasks.register<JavaExec>("simulate") {
+    group = "verification"
+    description = "EIG 질문 선택 vs 랜덤 질문 선택 시뮬레이션"
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass = "com.seonbi.engine.sim.Simulation"
+    args = (project.findProperty("args") as String?)?.split(" ") ?: listOf("--quick")
+}

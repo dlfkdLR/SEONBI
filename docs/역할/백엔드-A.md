@@ -222,6 +222,12 @@ void checkAndCount(String clientId, String callType);   // 초과 시 AI_QUOTA_E
 - [x] ArchUnit 규칙: `com.seonbi.engine`이 Spring·JPA·`ai`를 import하지 않음
 - [x] Spotless(google-java-format) + `-Xlint:all` 통과(engine 패키지는 경고도 오류)
 
+**다른 파트 없이 끝낸 서비스 쪽 순수 코드** (엔티티·`core`가 필요 없는 것, `com.seonbi.service`)
+- [x] `StateRules`: 4.2 상태 표(API별 상태 제약)·전이 규칙, 골든 테스트로 모든 칸 대조
+- [x] `QuestionText`: 5.1·5.5 템플릿 질문 문장, 골든 테스트로 글자까지 대조
+- [x] `AnalysisHelpers`·`Korean`: 31·37·39~45번 응답 조각 조립과 조사, 골든 테스트로 대조
+- 위 클래스는 엔티티를 모른다. `EngineBridge`·서비스가 B의 엔티티를 읽어 이 클래스들에 넘기는 부분만 남았다.
+
 **서비스·상태 전이** (B의 엔티티·리포지토리·`core`가 `dev`에 들어온 뒤)
 - [ ] `EngineBridge`: 엔티티 → 엔진 입력, 엔진 결과 → API ID 변환, 질문별 `origin` 전달
 - [ ] 상태 전이 서비스(4.2): 시작·종료(37·32·35)·추가 라운드·기준 추가/삭제 훅(`question_limit = max(현재 상한, 현재 답변 수 + 3)`)·확정
@@ -233,7 +239,7 @@ void checkAndCount(String clientId, String callType);   // 초과 시 AI_QUOTA_E
 - [ ] AI 호출 상한 서비스(18·23·28만 셈)
 
 **DTO·컨트롤러**
-- [ ] 질문·답변·분석 응답 `record` + Bean Validation (7.3 예시 응답과 필드 이름까지 같게)
+- [x] 질문·답변·분석 응답 `record` + Bean Validation (7.3 예시 응답과 필드 이름까지 같게) — `com.seonbi.dto`에 record 완료, Bean Validation 어노테이션은 Spring 합류 후(지금은 생성자 검증)
 - [ ] 7.3 예시 응답을 돌려주는 스텁 컨트롤러 먼저 올리기(프론트 연결용, 15장 병렬 원칙)
 - [ ] 질문 API: 31 → 32 → 37 → 33 (P0), 35·36·38 (P1), 34 (P2)
 - [ ] 분석 API: 41·40·44·45 (P0), 39 종합(`provisional`, `lowConfidence`, 설명은 템플릿 먼저), 42·43·46 (P1), 39 숨은 선호 `strength`·40 `statedRank`/`revealedRank` (P1)
@@ -256,7 +262,7 @@ void checkAndCount(String clientId, String callType);   // 초과 시 AI_QUOTA_E
 - [x] AI 계층 테스트 (Fake, 스키마 위반·관련 없음·fallback, 어댑터별 녹화 응답) — 어댑터별 요청·응답 변환은 고정 응답으로 검증, 실제 키 녹화는 키 이후
 
 **실험·보정**
-- [ ] 가상 사용자 시뮬레이션을 자바 엔진으로 재현하고 `docs/실험/`의 파이썬 결과와 비교(구매형·진로형, EIG vs 랜덤)
+- [x] 가상 사용자 시뮬레이션을 자바 엔진으로 재현하고 `docs/실험/`의 파이썬 결과와 비교(구매형·진로형, EIG vs 랜덤) — `docs/실험/시뮬레이션-결과-자바.md` (EIG가 12칸 모두 MAE 낮음, 적중률 우위는 입증 안 됨)
 - [ ] 범용 AI 비교 실험 3종: 일관성·전환점 정확도·질문 효율(1.5)
 - [ ] 파일럿 결과로 5.13 "파일럿" 파라미터(클래스 상수) 보정
 
