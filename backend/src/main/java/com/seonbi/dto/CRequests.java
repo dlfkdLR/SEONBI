@@ -33,13 +33,13 @@ public final class CRequests {
 
   public record CriterionItem(
       @Pattern(regexp = "criterion") String type,
-      @NotBlank @Size(max = 60) String name,
+      @NotBlank @Size(max = 40) String name,
       @NotBlank @Pattern(regexp = "numeric|rating|boolean") String criterionType,
       String direction,
-      @Size(max = 30) String unit,
-      @Size(max = 20) List<@Size(max = 12) String> levels,
+      @Size(max = 20) String unit,
+      @Size(min = 3, max = 7) List<@Size(min = 1, max = 12) String> levels,
       String inputMode,
-      @NotBlank @Pattern(regexp = "high|medium|low") String confidence)
+      @Pattern(regexp = "high|medium|low") String confidence)
       implements ExtractedItem {}
 
   public record ConstraintItem(
@@ -48,9 +48,9 @@ public final class CRequests {
       UUID criterionId,
       @Pattern(regexp = "<=|>=|==") String operator,
       JsonNode value,
-      @Size(max = 100) String label,
+      @Size(max = 60) String label,
       List<UUID> satisfiedBy,
-      @NotBlank @Pattern(regexp = "high|medium|low") String confidence)
+      @Pattern(regexp = "high|medium|low") String confidence)
       implements ExtractedItem {}
 
   public record OptionItem(
@@ -58,7 +58,7 @@ public final class CRequests {
       @NotBlank @Size(max = 60) String name,
       @Size(max = 1000) String description,
       @Size(max = 2048) String url,
-      @NotBlank @Pattern(regexp = "high|medium|low") String confidence)
+      @Pattern(regexp = "high|medium|low") String confidence)
       implements ExtractedItem {}
 
   public record PreferenceItem(
@@ -66,7 +66,7 @@ public final class CRequests {
       @NotBlank @Size(max = 60) String criterionA,
       @NotBlank @Size(max = 60) String criterionB,
       @NotNull @Min(-5) @Max(5) Integer value,
-      @NotBlank @Pattern(regexp = "high|medium|low") String confidence)
+      @Pattern(regexp = "high|medium|low") String confidence)
       implements ExtractedItem {}
 
   public record ConfirmInput(@NotEmpty List<@NotNull @Valid ExtractedItem> items) {}

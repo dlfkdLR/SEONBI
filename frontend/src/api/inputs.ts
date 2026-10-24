@@ -11,7 +11,7 @@ export type ExtractedItem =
       unit?: string;
       levels?: string[];
       inputMode?: string;
-      confidence: Confidence;
+      confidence?: Confidence;
     }
   | {
       type: "constraint";
@@ -21,21 +21,21 @@ export type ExtractedItem =
       value?: number | boolean;
       label?: string;
       satisfiedBy?: string[];
-      confidence: Confidence;
+      confidence?: Confidence;
     }
   | {
       type: "option";
       name: string;
       description?: string;
       url?: string;
-      confidence: Confidence;
+      confidence?: Confidence;
     }
   | {
       type: "preference";
       criterionA: string;
       criterionB: string;
       value: number;
-      confidence: Confidence;
+      confidence?: Confidence;
     };
 
 export interface ExtractInputRequest {
