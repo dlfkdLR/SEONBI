@@ -1,4 +1,5 @@
 import { decisionPath, requestJson } from "./http";
+import { clarifiedInputText } from "./inputText";
 
 export type Confidence = "high" | "medium" | "low";
 
@@ -90,10 +91,7 @@ export async function retryInputWithClarification(
   input: ExtractInputRequest,
   clarification: string,
 ): Promise<ExtractInputResponse> {
-  const clarifiedText = `${input.text.trim()}\n추가 설명: ${clarification.trim()}`;
-  if (clarifiedText.length > 500) {
-    throw new RangeError("추가 설명을 포함한 입력은 500자 이하여야 합니다.");
-  }
+  const clarifiedText = clarifiedInputText(input.text, clarification);
   await rejectInput(decisionId, inputId);
   return extractInput(decisionId, {
     ...input,

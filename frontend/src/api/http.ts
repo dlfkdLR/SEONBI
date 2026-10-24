@@ -7,14 +7,16 @@ export interface ApiErrorBody {
 }
 
 export class ApiError extends Error {
-  constructor(
-    public readonly status: number,
-    public readonly code: string,
-    message: string,
-    public readonly details?: unknown,
-  ) {
+  readonly status: number;
+  readonly code: string;
+  readonly details?: unknown;
+
+  constructor(status: number, code: string, message: string, details?: unknown) {
     super(message);
     this.name = "ApiError";
+    this.status = status;
+    this.code = code;
+    this.details = details;
   }
 }
 
@@ -85,4 +87,10 @@ export async function requestFile(path: string, fallbackFilename: string): Promi
 
 export function decisionPath(decisionId: string): string {
   return `/decisions/${encodeURIComponent(decisionId)}`;
+}
+
+
+/** Sends an API request whose successful response has no body (for example HTTP 204). */
+export async function requestVoid(path: string, init: RequestInit = {}): Promise<void> {
+  await send(path, init);
 }

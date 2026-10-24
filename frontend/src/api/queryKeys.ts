@@ -1,11 +1,19 @@
 export const queryKeys = {
-  decisions: (filters?: { status?: string }) => ["decisions", filters ?? {}] as const,
+  decisions: (filters?: { status?: string; cursor?: string; limit?: number }) => ["decisions", filters ?? {}] as const,
   decision: (decisionId: string) => ["decision", decisionId] as const,
+  options: (decisionId: string) => ["options", decisionId] as const,
+  criteria: (decisionId: string) => ["criteria", decisionId] as const,
+  values: (decisionId: string) => ["values", decisionId] as const,
+  conditions: (decisionId: string) => ["conditions", decisionId] as const,
   question: (decisionId: string) => ["question", decisionId] as const,
+  questionStatus: (decisionId: string) => ["question-status", decisionId] as const,
+  questionProgress: (decisionId: string) => ["question-progress", decisionId] as const,
   answers: (decisionId: string) => ["answers", decisionId] as const,
-  analysis: (decisionId: string, section?: string) =>
-    section ? (["analysis", decisionId, section] as const) : (["analysis", decisionId] as const),
+  analysis: (decisionId: string, section?: string) => section ? (["analysis", decisionId, section] as const) : (["analysis", decisionId] as const),
+  weights: (decisionId: string) => ["analysis", decisionId, "weights"] as const,
+  rankings: (decisionId: string) => ["analysis", decisionId, "rankings"] as const,
   scores: (decisionId: string) => ["scores", decisionId] as const,
-  sensitivity: (decisionId: string, criterionId: string) =>
-    ["sensitivity", decisionId, criterionId] as const,
+  sensitivity: (decisionId: string, criterionId?: string) => criterionId ? (["sensitivity", decisionId, criterionId] as const) : (["sensitivity", decisionId] as const),
+  stability: (decisionId: string) => ["analysis", decisionId, "stability"] as const,
+  changeConditions: (decisionId: string) => ["analysis", decisionId, "change-conditions"] as const,
 };
