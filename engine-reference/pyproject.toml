@@ -1,0 +1,15 @@
+[project]
+name = "seonbi-engine-reference"
+version = "0.5.0"
+description = "선비 분석 엔진의 파이썬 참조 구현. 자바 이식(com.seonbi.engine)을 골든 파일로 대조하는 정답지다."
+requires-python = ">=3.12"
+dependencies = ["numpy", "scipy", "pydantic>=2", "fastapi", "httpx"]
+
+[dependency-groups]
+dev = ["pytest", "pytest-asyncio", "hypothesis"]
+verify = ["pymc"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+asyncio_mode = "auto"
