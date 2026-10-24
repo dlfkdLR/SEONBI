@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 class QuestionFlowApiTest extends FlowTestBase {
 
   @Autowired DecisionRepository decisions;
+  @Autowired org.springframework.jdbc.core.JdbcTemplate jdbc;
 
   private Map<String, Object> answerFor(JsonNode question) {
     return switch (question.path("type").asText()) {
@@ -226,5 +227,33 @@ class QuestionFlowApiTest extends FlowTestBase {
         .isTrue();
     assertThat(decisions.findById(UUID.fromString(s.id())).orElseThrow().getStatus())
         .isEqualTo("DRAFT");
+  }
+
+  @Test
+  void 저장된_상황형_질문의_내용_없는_설명은_템플릿_문장으로_고쳐서_돌려준다() throws Exception {
+    Setup s = laptops();
+    JsonNode current = postJ(s.base() + "/questions/start", null, 200).path("question");
+    for (int i = 0; i < 14 && !current.path("type").asText().equals("ab_scenario"); i++) {
+      JsonNode res =
+          postJ(
+              s.base() + "/answers",
+              Map.of("questionId", current.path("id").asText(), "response", answerFor(current)),
+              201);
+      if (res.path("next").path("done").asBoolean()) {
+        break;
+      }
+      current = res.path("next").path("question");
+    }
+    org.junit.jupiter.api.Assumptions.assumeTrue(
+        current.path("type").asText().equals("ab_scenario"));
+    // AI가 "A안"/"B안"만 남긴 상태를 DB에 직접 만든다
+    jdbc.update(
+        "update questions set display = jsonb_set(jsonb_set(display, '{payload,optionA,description}',"
+            + " '\"A안\"'), '{payload,optionB,description}', '\"B안\"') where id = ?",
+        UUID.fromString(current.path("id").asText()));
+
+    JsonNode fixed = getJ(s.base() + "/questions/next", 200).path("question").path("payload");
+    assertThat(fixed.path("optionA").path("description").asText()).isNotEqualTo("A안").contains("더");
+    assertThat(fixed.path("optionB").path("description").asText()).isNotEqualTo("B안").contains("더");
   }
 }
