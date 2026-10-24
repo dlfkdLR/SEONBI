@@ -44,7 +44,7 @@
 | `backend/src/main/java/com/seonbi/web/` 중 A 몫 | `QuestionController`, `AnswerController`, `AnalysisController` (31~46번) |
 | `backend/src/main/java/com/seonbi/dto/` 중 A 몫 | 질문 객체·답변·분석 응답 `record` + Bean Validation (7.3 형식 그대로, camelCase는 Jackson 기본) |
 | `backend/src/main/java/com/seonbi/ai/` | `LlmClient` 인터페이스, `LlmRouter`, 호출 6종 메서드, 출력 스키마 `record`, `prompts/` |
-| `backend/src/main/java/com/seonbi/ai/provider/` | `FakeAdapter`, `GeminiAdapter`(Spring `RestClient`, `responseSchema`). OpenAI·Anthropic은 필요할 때 추가 |
+| `backend/src/main/java/com/seonbi/ai/provider/` | `FakeAdapter`, `GeminiAdapter`, `OpenAiAdapter`, `AnthropicAdapter` (`HttpTransport`로 HTTP 호출, Spring `RestClient` 전환 예정) |
 | `backend/src/test/java/com/seonbi/` | 엔진 단위 테스트(JUnit 5 + AssertJ + jqwik), 골든 파일 대조 테스트, ArchUnit 구조 검사, 서비스·컨트롤러 통합 테스트(MockMvc + Testcontainers), AI 계층 테스트 |
 | `backend/src/test/resources/golden/` | 파이썬 참조 구현이 만든 골든 JSON (정규화 행렬·우도·전환점·5.12 수치 등) |
 | `engine-reference/` | 기존 파이썬 코드(`app/`, `tests/`, `notebooks/`, `pyproject.toml`)를 이동. 요청 경로에서는 쓰지 않는 "정답지". 골든 파일 생성 스크립트도 여기에 둔다 |
@@ -239,13 +239,13 @@ void checkAndCount(String clientId, String callType);   // 초과 시 AI_QUOTA_E
 - [ ] 분석 API: 41·40·44·45 (P0), 39 종합(`provisional`, `lowConfidence`, 설명은 템플릿 먼저), 42·43·46 (P1), 39 숨은 선호 `strength`·40 `statedRank`/`revealedRank` (P1)
 
 **AI 계층 (자바)**
-- [ ] `LlmClient` 인터페이스, `LlmRouter`(`제공자:모델명` 파싱, `LLM_MODEL_FAST/QUALITY`, `LLM_ROUTES`, `LLM_FALLBACK_MODELS`), 서버 시작 시 키 없으면 시작 거부(6.4)
-- [ ] `FakeAdapter` (카테고리별 기본 기준 목록 = 응답 데이터, 6.2)
-- [ ] `GeminiAdapter` (`RestClient`, `responseSchema` 변환, `record`에서 JSON 스키마 생성) — 녹화 응답 테스트는 키가 `.env`에 들어간 뒤
-- [ ] 공통 검증: Jackson 파싱 → Bean Validation 재검증 → 1회 재시도 → fallback(6.3). `extractConditions`는 fallback 없이 `503 AI_UNAVAILABLE`
-- [ ] 6종 호출 메서드와 제공자 중립 프롬프트(`<user_input>` 분리, 6.3), `extractConditions` 출력은 28번 추출 항목 형식
-- [ ] `phraseQuestion` 출력 → 질문 객체 필드 매핑, 서버 값과 다른 숫자가 있으면 버리고 템플릿
-- [ ] `explainResult` 숫자 검증(퍼센트·금액·수치·단계 라벨) → 불일치 시 템플릿
+- [x] `LlmClient` 인터페이스, `LlmRouter`(`제공자:모델명` 파싱, `LLM_MODEL_FAST/QUALITY`, `LLM_ROUTES`, `LLM_FALLBACK_MODELS`), 서버 시작 시 키 없으면 시작 거부(6.4) — 시작 시 검증은 `LlmRouter.validateSettings()`로 만들어 둠, Spring 기동에 연결하는 일은 B의 골격 이후
+- [x] `FakeAdapter` (카테고리별 기본 기준 목록 = 응답 데이터, 6.2)
+- [x] `GeminiAdapter` (`RestClient`, `responseSchema` 변환, `record`에서 JSON 스키마 생성) — 녹화 응답 테스트는 키가 `.env`에 들어간 뒤 — 지금은 JDK `HttpClient`(`HttpTransport`)로 구현, Spring이 들어오면 `RestClient` 구현 한 클래스만 바꿈. OpenAI·Anthropic 어댑터도 같이 구현(6.4 구조도). 실제 키 녹화 응답은 키 이후
+- [x] 공통 검증: Jackson 파싱 → Bean Validation 재검증 → 1회 재시도 → fallback(6.3). `extractConditions`는 fallback 없이 `503 AI_UNAVAILABLE` — Bean Validation 대신 `record` 생성자 검증으로 같은 규칙을 적용(Spring 합류 후 어노테이션으로 바꿀 수 있음)
+- [x] 6종 호출 메서드와 제공자 중립 프롬프트(`<user_input>` 분리, 6.3), `extractConditions` 출력은 28번 추출 항목 형식
+- [x] `phraseQuestion` 출력 → 질문 객체 필드 매핑, 서버 값과 다른 숫자가 있으면 버리고 템플릿
+- [x] `explainResult` 숫자 검증(퍼센트·금액·수치·단계 라벨) → 불일치 시 템플릿
 - [ ] `ai_usage_logs` 기록(원문 저장 안 함, 제공자·모델명·토큰 수), 23번은 상한 초과·실패 시 기본 기준 목록
 - [ ] 자동 호출(문장 다듬기·장단점 요약·결과 설명) 결과 캐시 — 같은 질문·같은 분석 버전에서 재호출 안 함
 - [ ] 32·37에 `phraseQuestion`, 39에 `summarizeOptions`·`explainResult` 연결 (실패해도 템플릿으로 흐름 유지)
@@ -253,7 +253,7 @@ void checkAndCount(String clientId, String callType);   // 초과 시 AI_QUOTA_E
 **테스트**
 - [ ] 엔진 단위 테스트를 14장 기준으로 채우기 (JUnit 5 + AssertJ + jqwik)
 - [ ] 질문·분석 API 통합 테스트(`@SpringBootTest` + MockMvc + Testcontainers): 상태 전이, **4.2 API별 상태 제약 표의 모든 칸**, 오류 코드·형식
-- [ ] AI 계층 테스트 (Fake, 스키마 위반·관련 없음·fallback, 어댑터별 녹화 응답)
+- [x] AI 계층 테스트 (Fake, 스키마 위반·관련 없음·fallback, 어댑터별 녹화 응답) — 어댑터별 요청·응답 변환은 고정 응답으로 검증, 실제 키 녹화는 키 이후
 
 **실험·보정**
 - [ ] 가상 사용자 시뮬레이션을 자바 엔진으로 재현하고 `docs/실험/`의 파이썬 결과와 비교(구매형·진로형, EIG vs 랜덤)
