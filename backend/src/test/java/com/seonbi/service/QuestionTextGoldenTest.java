@@ -62,9 +62,7 @@ class QuestionTextGoldenTest {
       List<CriterionMeta> criteria = metas(c);
       Map<String, String> ranges = new LinkedHashMap<>();
       if (!c.get("ranges").isNull()) {
-        c.get("ranges")
-            .fields()
-            .forEachRemaining(e -> ranges.put(e.getKey(), e.getValue().asText()));
+        c.get("ranges").properties().forEach(e -> ranges.put(e.getKey(), e.getValue().asText()));
       }
       String category = c.get("category").asText();
       if (c.get("error").isNull()) {
@@ -105,8 +103,8 @@ class QuestionTextGoldenTest {
   @Test
   void 카테고리별_명사가_같다() {
     G.get("nouns")
-        .fields()
-        .forEachRemaining(
+        .properties()
+        .forEach(
             e ->
                 assertThat(QuestionText.nounForCategory(e.getKey()))
                     .isEqualTo(e.getValue().asText()));

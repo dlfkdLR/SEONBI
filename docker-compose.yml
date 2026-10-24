@@ -1,0 +1,23 @@
+services:
+  db:
+    image: postgres:16.4
+    environment:
+      POSTGRES_DB: seonbi
+      POSTGRES_USER: seonbi
+      POSTGRES_PASSWORD: seonbi
+    ports: ["5432:5432"]
+    volumes: ["seonbi-pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U seonbi -d seonbi"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  api:
+    build: ./backend
+    env_file: ./backend/.env
+    ports: ["8000:8000"]
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  seonbi-pgdata:

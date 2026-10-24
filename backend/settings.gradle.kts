@@ -1,1 +1,1 @@
-rootProject.name = "seonbi-backend"
+rootProject.name = "seonbi"

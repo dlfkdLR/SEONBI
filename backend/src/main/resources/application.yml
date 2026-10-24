@@ -1,0 +1,18 @@
+server:
+  port: 8000
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/seonbi}
+    username: ${SPRING_DATASOURCE_USERNAME:seonbi}
+    password: ${SPRING_DATASOURCE_PASSWORD:seonbi}
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+springdoc:
+  use-fqn: true
+  swagger-ui:
+    path: /swagger-ui

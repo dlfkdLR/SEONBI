@@ -83,7 +83,7 @@
 | 16 | PATCH | `/options/{optionId}` | P0 | `OptionController` | 이름 중복 불가. FINALIZED면 409. version +1 |
 | 17 | DELETE | `/options/{optionId}` | P0 | `OptionController` | 관련 값 삭제, version +1. **QUESTIONING/ANALYZED에서 삭제해 2개 미만이 되면 `409 INVALID_STATE`** |
 | 18 | POST | `/options/recommendations` | **P2** | `OptionController` | **A의 LLM 호출 `recommend_options`를 부른다**. 요청 `{count}`, 결과는 저장하지 않음. 고르면 14번으로 추가. AI 호출 상한에 포함, 넘으면 `429 AI_QUOTA_EXCEEDED`. 실패 시 기능 숨김(6.2). 맨 마지막에 |
-| 19 | POST | `/criteria` | P0 | `CriterionController` | name ≤40자·중복 불가, type enum. **결정당 최대 7개, 8개째는 `409 LIMIT_EXCEEDED`**. rating: `levels` 3~7개·각 1~12자·중복 불가(생략 시 기본 5단계), `inputMode`는 rating만(`score` 기본), direction 고정 `higher_better`. boolean: `true_better`. 선택 필드: `scaleMin`·`scaleMax`(numeric만), `source`(`user` 기본 \| `ai_recommended`. `free_text`는 29번에서 서버가 채움). **QUESTIONING/ANALYZED에서 추가하면 A의 상태 전이 서비스로 `QUESTIONING`으로 바꾸고 응답에 `"statusChanged": "QUESTIONING"`**. version +1 |
+| 19 | POST | `/criteria` | P0 | `CriterionController` | name ≤40자·중복 불가, type enum. **결정당 최대 7개, 8개째는 `409 LIMIT_EXCEEDED`**. rating: `levels` 3~7개·각 1~12자·중복 불가(생략 시 기본 5단계), `inputMode`는 rating만(`score` 기본), direction 고정 `higher_better`. boolean: `true_better`. 선택 필드: `scaleMin`·`scaleMax`(numeric만), `source`(`user` 기본 \| `ai_recommended`. `free_text`는 29번에서 서버가 채움). **A의 상태 전이 서비스를 호출한다. ANALYZED → QUESTIONING이면 `statusChanged: "QUESTIONING"`, 이미 QUESTIONING이거나 DRAFT이면 null**. version +1 |
 | 20 | GET | `/criteria` | P0 | `CriterionController` | 기준 목록 |
 | 21 | PATCH | `/criteria/{criterionId}` | P0 | `CriterionController` | `scale_frozen`인데 `scaleMin/scaleMax`·`levels` 개수가 바뀌면 `"warning": "SCALE_CHANGED_AFTER_ANSWERS"`(라벨 이름만 바꾸면 영향 없음). `inputMode` 변경 시 그 기준 값 초기화, score→rank는 기존 점수 순서로 `"prefilledRanking"` 반환. version +1 |
 | 22 | DELETE | `/criteria/{criterionId}` | P0 | `CriterionController` | 관련 답변 `is_valid=false` 처리, `{ "invalidatedAnswers": n }` 반환. version +1 |
@@ -166,8 +166,8 @@ QUESTIONING/ANALYZED에서 B가 따로 챙길 규칙: 14번 `RANKING_UPDATED` �
 ### 6.3 상태 전이는 A의 서비스로만 (A가 제공, B가 호출)
 
 - 상태는 서버가 관리하고, B는 `decisions.status`를 **직접 바꾸지 않는다**(4.2).
-- 19번 기준 추가(QUESTIONING/ANALYZED): A의 상태 전이 서비스를 호출한다. 제안: `transitionOnCriterionAdded(Decision, UUID criterionId)`. `question_limit` 조정(ANALYZED → 추가 라운드 `답변 수 + 3`, QUESTIONING → `max(현재 상한, 답변 수 + 3)`)과 새 기준 우선 질문은 A가 처리한다(4.2 추가 질문 라운드). B는 status·`question_limit`을 직접 건드리지 않는다.
-- 기준 삭제(22번)로 답변을 `is_valid=false`로 만드는 것은 B가 하고, 재추정은 A의 분석이 캐시 무효화를 보고 한다.
+- 19번 기준 추가(QUESTIONING/ANALYZED): A의 상태 전이 서비스를 호출한다. 제안: `String onCriterionAdded(Decision, UUID criterionId)`. `question_limit` 조정(ANALYZED → 추가 라운드 `답변 수 + 3`, QUESTIONING → `max(현재 상한, 답변 수 + 3)`)과 새 기준 우선 질문은 A가 처리한다(4.2 추가 질문 라운드). B는 status·`question_limit`을 직접 건드리지 않는다.
+- 기준 삭제(22번)로 답변을 `is_valid=false`로 만드는 것은 B만 담당하며 A의 `onCriterionDeleted`를 중복 호출하지 않는다. 재추정은 A의 분석이 캐시 무효화를 보고 한다.
 - 9번 생성 시 `DRAFT`로 만드는 것은 초기값이라 B가 넣는다.
 - 척도 고정(`scale_min/max`, `scale_frozen`)은 31번 질문 시작에서 A가 한다. B는 21번에서 frozen 여부만 보고 경고를 붙인다.
 - A가 늦으면 19번은 상태 전이 호출 자리만 두고 `statusChanged` 응답 조건까지 먼저 구현한다. 합의한 시그니처로 빈 구현을 둔다.
@@ -280,7 +280,7 @@ QUESTIONING/ANALYZED에서 B가 따로 챙길 규칙: 14번 `RANKING_UPDATED` �
 
 **명세**
 - 7장 스키마 v1과 8장을 벗어나지 않는다. **없는 필드·없는 API를 추가하지 않는다.**
-- 빈틈이 보이면 코드로 메우지 말고 먼저 팀에 공유하고, **기획서부터 수정**한 뒤 구현한다 (변경은 PR + 17장 기록 + OpenAPI 타입 재생성, 7.1).
+- 빈틈이 보이면 코드로 메우지 말고 먼저 팀에 공유하고, **기획서부터 수정**한 뒤 구현한다 (변경은 PR + 17장 기록 + B의 OpenAPI 명세 갱신 + C의 타입 재생성, 7.1).
 - 7장 스키마 변경 PR에는 프론트 담당을 리뷰어로 넣는다 (15.1).
 - 먼저 7장 예시 응답을 돌려주는 스텁 컨트롤러를 올려 프론트가 MSW 없이 바로 붙게 한다 (7.1, 15장).
 
@@ -302,7 +302,7 @@ QUESTIONING/ANALYZED에서 B가 따로 챙길 규칙: 14번 `RANKING_UPDATED` �
 - 린트·포맷: Spotless(google-java-format) + `-Xlint:all`.
 - 커밋: 무엇을 했는지 알아볼 수 있게 쓴다(13.2).
 - 브랜치: 각자 자기 브랜치를 만들어 푸시하고 `dev`로 **PR만 올린다.** 검수와 합치기는 A가 한다. Spring 골격·엔티티·`core`·스텁은 다른 사람이 기다리므로 작게 먼저 PR을 올린다. 개발 기준은 `dev`의 `docs/`이고, 문서가 바뀌면 `git pull origin dev`로 받아 오며, PR 대상은 `main`이 아니라 `dev`다(13.2, `docs/개발환경-세팅.md` 0번).
-- API 변경 시 OpenAPI 타입 재생성 커밋 포함.
+- API 변경 시 B는 `backend/openapi.json`까지 갱신한다. `frontend/src/api/schema.d.ts` 생성·커밋은 C 담당이며 B는 프론트 타입 파일을 커밋하지 않는다.
 
 ---
 

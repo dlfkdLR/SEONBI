@@ -105,8 +105,8 @@ public final class Golden {
 
   public static Map<String, Scale> scales(JsonNode n) {
     Map<String, Scale> out = new LinkedHashMap<>();
-    n.fields()
-        .forEachRemaining(
+    n.properties()
+        .forEach(
             e ->
                 out.put(
                     e.getKey(),

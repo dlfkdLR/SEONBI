@@ -71,8 +71,8 @@ class NormalizerGoldenTest {
       }
       assertThat(r.excluded().keySet()).as(name).hasSize(c.get("excluded").size());
       c.get("excluded")
-          .fields()
-          .forEachRemaining(
+          .properties()
+          .forEach(
               e ->
                   assertThat(r.excluded().get(e.getKey()))
                       .as(name)
