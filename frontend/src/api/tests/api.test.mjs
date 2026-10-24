@@ -6,7 +6,8 @@ function installFetch(t, onRequest) {
   const original = globalThis.fetch;
   globalThis.fetch = async (url, init) => {
     onRequest(String(url), init);
-    return { ok: true, status: 200, headers: new Headers(), json: async () => ({ id: "input-1" }) };
+    // 요청 계층이 본문을 text()로 읽으므로 실제 Response를 돌려준다
+    return new Response(JSON.stringify({ id: "input-1" }), { status: 200, headers: { "Content-Type": "application/json" } });
   };
   t.after(() => { globalThis.fetch = original; });
 }

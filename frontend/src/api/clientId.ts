@@ -20,9 +20,10 @@ export function getClientId(): string {
   if (memoryClientId) return memoryClientId;
 
   try {
-    const stored = globalThis.localStorage?.getItem(STORAGE_KEY);
+    const stored = globalThis.localStorage?.getItem(STORAGE_KEY) || globalThis.localStorage?.getItem("seonbi.client-id");
     if (stored) {
       memoryClientId = stored;
+      try { globalThis.localStorage?.setItem(STORAGE_KEY, stored); } catch { /* Keep session identity. */ }
       return stored;
     }
   } catch {

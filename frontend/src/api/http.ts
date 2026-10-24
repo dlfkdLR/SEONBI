@@ -1,96 +1,105 @@
-import { getClientId } from "./clientId";
-
-export const API_BASE_URL = "/api/v1";
-
-export interface ApiErrorBody {
-  error: { code: string; message: string; details?: unknown };
-}
+import { getClientId } from './clientId';
+import { endpoints } from './endpoints';
+import type { EndpointName, RequestOptions } from './endpoints';
 
 export class ApiError extends Error {
+  // Node의 타입 제거(strip-only) 모드로 돌리는 test-api.sh에서도 읽히도록 매개변수 속성을 쓰지 않는다
   readonly status: number;
   readonly code: string;
   readonly details?: unknown;
-
   constructor(status: number, code: string, message: string, details?: unknown) {
     super(message);
-    this.name = "ApiError";
+    this.name = 'ApiError';
     this.status = status;
     this.code = code;
     this.details = details;
   }
 }
+export interface ExportFile { blob: Blob; filename: string }
+interface ClientOptions { baseUrl: string; clientId: () => string; fetch?: typeof fetch }
 
-/** Message for views that need to show a concise, user-facing API error. */
-export function apiErrorMessage(error: unknown): string {
-  if (error instanceof ApiError && error.code === "NOT_IMPLEMENTED") {
-    return "이 기능은 아직 준비 중이에요.";
+export function createApiClient(options: ClientOptions) {
+  const send = options.fetch ?? ((...args: Parameters<typeof fetch>) => globalThis.fetch(...args));
+  async function response<K extends EndpointName>(name: K, request: RequestOptions<K>): Promise<Response> {
+
+    const endpoint = endpoints[name];
+    const params = ('params' in request ? request.params : undefined) as Record<string, string> | undefined;
+    const path = endpoint.path.replace(/\{(\w+)\}/g, (_, key: string) => {
+      const value = params?.[key];
+      if (!value) throw new ApiError(0, 'MISSING_PATH_PARAMETER', `${key}가 필요해요.`);
+      return encodeURIComponent(value);
+    });
+    const url = new URL(options.baseUrl.replace(/\/$/, '') + path, globalThis.location?.origin ?? 'http://localhost');
+    for (const [key, value] of Object.entries(request.query ?? {})) if (value !== undefined) url.searchParams.set(key, String(value));
+    if (request.body !== undefined && !['POST', 'PATCH', 'PUT'].includes(endpoint.method)) throw new ApiError(0, 'UNEXPECTED_BODY', '이 API에는 요청 본문을 보낼 수 없어요.');
+    const headers = new Headers({ 'X-Client-Id': options.clientId() });
+    if (request.body !== undefined) headers.set('Content-Type', 'application/json');
+    headers.set('Accept', name === 'exportDecision' ? '*/*' : 'application/json');
+    let res: Response;
+    try { res = await send(options.baseUrl.trim() ? url : url.pathname + url.search, { method: endpoint.method, headers, signal: request.signal, body: request.body === undefined ? undefined : JSON.stringify(request.body), credentials: 'omit' }); }
+    catch (e) { if (e instanceof Error && e.name === 'AbortError') throw e; throw new ApiError(0, 'NETWORK_ERROR', 'API 서버에 연결하지 못했어요. 서버 주소와 실행 상태를 확인해주세요.'); }
+    if (!res.ok) {
+      const body: unknown = await res.json().catch(() => null);
+      const root = body && typeof body === 'object' ? body as Record<string, unknown> : {};
+      const error = root.error && typeof root.error === 'object' ? root.error as Record<string, unknown> : root;
+      throw new ApiError(res.status, typeof error.code === 'string' ? error.code : 'HTTP_ERROR', typeof error.message === 'string' ? error.message : `요청을 처리하지 못했어요. (${res.status})`, error.details);
+    }
+    return res;
   }
-  if (error instanceof ApiError) return error.message;
-  return "요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.";
+  return {
+    /** Return unknown until the server's OpenAPI response schema is confirmed.
+     * Never substitutes local successes for a failed server request.
+     */
+    async request<K extends Exclude<EndpointName, 'exportDecision'>>(name: K, request: RequestOptions<K>): Promise<unknown> {
+      const res = await response(name, request);
+      if (res.status === 204) return undefined;
+      const text = await res.text();
+      if (!text.trim()) return undefined;
+      try { const result: unknown = JSON.parse(text); if (result && typeof result === 'object' && 'stub' in result && result.stub === true) throw new ApiError(501, 'NOT_IMPLEMENTED', '아직 연결되지 않은 서버 기능이에요.'); return result; }
+      catch (e) { if (e instanceof ApiError) throw e; throw new ApiError(res.status, 'INVALID_RESPONSE', '서버가 올바른 JSON 응답을 보내지 않았어요.'); }
+    },
+    async exportDecision(request: RequestOptions<'exportDecision'>): Promise<ExportFile> {
+      const res = await response('exportDecision', request), disposition = res.headers.get('content-disposition') ?? '';
+      const extended = disposition.match(/filename\*=UTF-8''([^;]+)/i), plain = disposition.match(/filename="([^"]+)"|filename=([^;]+)/i);
+      let filename = `decision-${request.params.decisionId}.md`;
+      try { filename = extended ? decodeURIComponent(extended[1]) : plain ? (plain[1] ?? plain[2]).trim() : filename; } catch { /* Keep fallback for malformed filename encoding. */ }
+      filename = filename.replace(/[\\/\x00-\x1f]/g, '_');
+      return { blob: await res.blob(), filename };
+    },
+  };
 }
 
-export interface DownloadedFile {
-  blob: Blob;
-  filename: string;
-}
-
-function isApiErrorBody(value: unknown): value is ApiErrorBody {
-  if (typeof value !== "object" || value === null || !("error" in value)) return false;
-  const error = value.error;
-  return typeof error === "object" && error !== null &&
-    "code" in error && typeof error.code === "string" &&
-    "message" in error && typeof error.message === "string";
-}
-
-async function parseError(response: Response): Promise<ApiError> {
-  let body: unknown;
-  try {
-    body = await response.json();
-  } catch {
-    // Proxies and unavailable servers can return HTML or an empty body.
-  }
-  if (isApiErrorBody(body)) {
-    return new ApiError(response.status, body.error.code, body.error.message, body.error.details);
-  }
-  return new ApiError(response.status, "HTTP_ERROR", `요청에 실패했습니다. (${response.status})`);
-}
-
-async function send(path: string, init: RequestInit = {}): Promise<Response> {
-  const headers = new Headers(init.headers);
-  headers.set("X-Client-Id", getClientId());
-  if (init.body !== undefined && !headers.has("Content-Type")) {
-    headers.set("Content-Type", "application/json");
-  }
-  const response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
-  if (!response.ok) throw await parseError(response);
-  return response;
-}
-
+/** One transport for the screen API and C's free-text/result helpers. */
+export const api = createApiClient({ baseUrl: import.meta.env?.VITE_API_BASE_URL ?? '', clientId: getClientId });
+export function decisionPath(decisionId: string): string { return `/decisions/${encodeURIComponent(decisionId)}`; }
 export async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> {
-  return (await send(path, init)).json() as Promise<T>;
+  const url = new URL(path, 'http://contract');
+  const full = '/api/v1' + url.pathname;
+  const method = init.method ?? 'GET';
+  for (const [name, endpoint] of Object.entries(endpoints)) {
+    if (endpoint.method !== method || name === 'exportDecision') continue;
+    const keys = [...endpoint.path.matchAll(/\{(\w+)\}/g)].map(x => x[1]);
+    const pattern = new RegExp('^' + endpoint.path.replace(/\{\w+\}/g, '([^/]+)') + '$');
+    const match = full.match(pattern);
+    if (!match) continue;
+    const params = Object.fromEntries(keys.map((key, i) => [key, decodeURIComponent(match[i + 1])]));
+    return await api.request(name as Exclude<EndpointName, 'exportDecision'>, {
+      params, query: Object.fromEntries(url.searchParams), signal: init.signal ?? undefined,
+      ...(init.body === undefined ? {} : { body: JSON.parse(String(init.body)) }),
+    } as never) as T;
+  }
+  throw new ApiError(0, 'UNKNOWN_ENDPOINT', '정의되지 않은 API 요청이에요.');
 }
-
-export async function requestBlob(path: string, init: RequestInit = {}): Promise<Blob> {
-  return (await send(path, init)).blob();
+export async function requestFile(path: string, fallbackFilename: string): Promise<ExportFile> {
+  const match = path.match(/^\/decisions\/([^/]+)\/export(?:\?|$)/);
+  if (!match) throw new ApiError(0, 'UNKNOWN_ENDPOINT', '올바르지 않은 내보내기 주소예요.');
+  const result = await api.exportDecision({ params: { decisionId: decodeURIComponent(match[1]) }, query: { format: 'md' } });
+  return { ...result, filename: result.filename || fallbackFilename };
 }
+export type DownloadedFile = ExportFile;
 
-export async function requestFile(path: string, fallbackFilename: string): Promise<DownloadedFile> {
-  const response = await send(path);
-  const disposition = response.headers.get("Content-Disposition") ?? "";
-  const encoded = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
-  const plain = disposition.match(/filename="?([^";]+)"?/i)?.[1];
-  const filename = encoded
-    ? decodeURIComponent(encoded)
-    : plain ?? fallbackFilename;
-  return { blob: await response.blob(), filename };
-}
-
-export function decisionPath(decisionId: string): string {
-  return `/decisions/${encodeURIComponent(decisionId)}`;
-}
-
-
-/** Sends an API request whose successful response has no body (for example HTTP 204). */
-export async function requestVoid(path: string, init: RequestInit = {}): Promise<void> {
-  await send(path, init);
-}
+/** C helper compatibility, using the same registered transport. */
+export const API_BASE_URL = '/api/v1';
+export async function requestVoid(path: string, init: RequestInit = {}): Promise<void> { await requestJson(path, init); }
+export async function requestBlob(path: string): Promise<Blob> { return (await requestFile(path, 'decision.md')).blob; }
+export function apiErrorMessage(error: unknown): string { return error instanceof Error ? error.message : '요청을 처리하지 못했어요.'; }
