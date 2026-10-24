@@ -15,6 +15,24 @@ export class ApiError extends Error {
     this.details = details;
   }
 }
+/**
+ * 요청 실패를 브라우저 콘솔(F12 → Console)에 항상 남긴다. 화면에는 짧은 문구만 나오므로, 원인을 찾을 때는 여기를 본다.
+ * 어느 API가(메서드·주소), 어떤 상태로(HTTP 상태·오류 코드) 실패했고 서버가 준 상세(details)와 원본 응답이 무엇인지 함께 찍는다.
+ */
+export function logApiFailure(info: { method: string; url: string; error: ApiError; raw?: string }): void {
+  const { method, url, error, raw } = info;
+  const status = error.status === 0 ? '요청 전송 실패' : `HTTP ${error.status}`;
+  console.error(`[선비 API 오류] ${method} ${url} → ${status} · ${error.code}: ${error.message}`, {
+    method,
+    url,
+    status: error.status,
+    code: error.code,
+    message: error.message,
+    details: error.details,
+    serverResponse: raw === undefined ? undefined : raw.slice(0, 1000),
+    time: new Date().toISOString(),
+  });
+}
 export interface ExportFile { blob: Blob; filename: string }
 interface ClientOptions { baseUrl: string; clientId: () => string; fetch?: typeof fetch }
 
@@ -37,12 +55,21 @@ export function createApiClient(options: ClientOptions) {
     headers.set('Accept', name === 'exportDecision' ? '*/*' : 'application/json');
     let res: Response;
     try { res = await send(options.baseUrl.trim() ? url : url.pathname + url.search, { method: endpoint.method, headers, signal: request.signal, body: request.body === undefined ? undefined : JSON.stringify(request.body), credentials: 'omit' }); }
-    catch (e) { if (e instanceof Error && e.name === 'AbortError') throw e; throw new ApiError(0, 'NETWORK_ERROR', 'API 서버에 연결하지 못했어요. 서버 주소와 실행 상태를 확인해주세요.'); }
+    catch (e) {
+      if (e instanceof Error && e.name === 'AbortError') throw e;
+      const failure = new ApiError(0, 'NETWORK_ERROR', 'API 서버에 연결하지 못했어요. 서버 주소와 실행 상태를 확인해주세요.', { reason: e instanceof Error ? e.message : String(e) });
+      logApiFailure({ method: endpoint.method, url: url.pathname + url.search, error: failure });
+      throw failure;
+    }
     if (!res.ok) {
-      const body: unknown = await res.json().catch(() => null);
+      const raw = await res.text().catch(() => '');
+      let body: unknown = null;
+      try { body = JSON.parse(raw); } catch { /* 서버가 JSON이 아닌 응답(플랫폼 404 등)을 준 경우: 원본을 콘솔에 남긴다 */ }
       const root = body && typeof body === 'object' ? body as Record<string, unknown> : {};
       const error = root.error && typeof root.error === 'object' ? root.error as Record<string, unknown> : root;
-      throw new ApiError(res.status, typeof error.code === 'string' ? error.code : 'HTTP_ERROR', typeof error.message === 'string' ? error.message : `요청을 처리하지 못했어요. (${res.status})`, error.details);
+      const failure = new ApiError(res.status, typeof error.code === 'string' ? error.code : 'HTTP_ERROR', typeof error.message === 'string' ? error.message : `요청을 처리하지 못했어요. (${res.status})`, error.details);
+      logApiFailure({ method: endpoint.method, url: url.pathname + url.search, error: failure, raw });
+      throw failure;
     }
     return res;
   }

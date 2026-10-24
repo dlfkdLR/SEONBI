@@ -14,9 +14,14 @@ const QuestionsPage = lazy(() => import('./pages/questions'));
 const ResultPage = lazy(() => import('./pages/result'));
 const SimulationPage = lazy(() => import('./pages/simulation'));
 
+// 어디서든 잡히지 않은 오류와 거절된 Promise를 콘솔에 남긴다 (화면에는 짧은 문구만 나온다)
+window.addEventListener('error', event => console.error('[선비 화면 오류]', event.message, event.error ?? ''));
+window.addEventListener('unhandledrejection', event => console.error('[선비 처리되지 않은 오류]', event.reason));
+
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { failed: boolean }> {
   state = { failed: false };
   static getDerivedStateFromError() { return { failed: true }; }
+  componentDidCatch(error: unknown, info: React.ErrorInfo) { console.error('[선비 화면 오류] 화면을 그리다 실패했어요.', error, info.componentStack); }
   render() {
     return this.state.failed ? <main className="page"><PageHeading title="화면을 불러오지 못했어요." description="새로고침 후 다시 시도해주세요." /><Button onClick={() => location.reload()}>다시 불러오기</Button></main> : this.props.children;
   }
