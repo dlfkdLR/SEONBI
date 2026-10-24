@@ -56,14 +56,12 @@ public final class Prompts {
   // 같은 입력이면 같은 프롬프트가 나오게 키를 정렬한다 (파이썬의 sort_keys=True)
   private static Object sorted(Object o) {
     if (o instanceof Map<?, ?> m) {
-      return m.entrySet().stream()
+      // null 값(예: 아직 없는 revealedRank)이 있어도 되도록 toMap 대신 직접 채운다
+      var out = new java.util.LinkedHashMap<String, Object>();
+      m.entrySet().stream()
           .sorted((a, b) -> String.valueOf(a.getKey()).compareTo(String.valueOf(b.getKey())))
-          .collect(
-              Collectors.toMap(
-                  e -> String.valueOf(e.getKey()),
-                  e -> sorted(e.getValue()),
-                  (a, b) -> a,
-                  java.util.LinkedHashMap::new));
+          .forEach(e -> out.put(String.valueOf(e.getKey()), sorted(e.getValue())));
+      return out;
     }
     if (o instanceof List<?> l) {
       return l.stream().map(Prompts::sorted).toList();
