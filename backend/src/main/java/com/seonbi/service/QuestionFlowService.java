@@ -390,7 +390,12 @@ public class QuestionFlowService {
     int seq = ctx.data.questions().stream().mapToInt(Question::getSeq).max().orElse(0) + 1;
     Question q = new Question();
     Map<String, Object> display =
-        QuestionText.buildQuestion(spec, inp.metas(), inp.scales(), inp.category());
+        QuestionText.buildQuestion(
+            spec,
+            inp.metas(),
+            inp.scales(),
+            inp.category(),
+            QuestionText.readableRanges(inp.metas()));
     Map<String, Object> forAi = new LinkedHashMap<>();
     forAi.put("id", q.getId().toString());
     forAi.put("seq", seq);
@@ -750,7 +755,8 @@ public class QuestionFlowService {
               spec,
               bridge.criterionMetas(ctx.data),
               bridge.computeScales(ctx.data),
-              d.getCategory());
+              d.getCategory(),
+              QuestionText.readableRanges(bridge.criterionMetas(ctx.data)));
     } catch (IllegalArgumentException e) {
       throw FlowErrors.notReady(
           "질문 범위를 만들 수 없습니다.",

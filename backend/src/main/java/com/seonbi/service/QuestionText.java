@@ -147,6 +147,27 @@ public final class QuestionText {
     return buildQuestion(spec, criteria, scales, category, Map.of());
   }
 
+  /**
+   * 선택지 이름으로 범위를 보여 주는 기준(단계형)의 화면용 범위 표기. "ai학과~소프트웨어개발과"만으로는 어느 쪽이 높은지 알 수 없어 끝에 "(낮음)", "(높음)"을
+   * 붙인다(순위 입력은 "(낮은 순위)", "(높은 순위)"). 계산·검증용 기본 표기(5.1)는 그대로 두고, 질문을 만들 때 ranges로 넘겨 덮어쓴다.
+   */
+  public static Map<String, String> readableRanges(List<CriterionMeta> criteria) {
+    Map<String, String> out = new LinkedHashMap<>();
+    for (CriterionMeta c : criteria) {
+      if (c.type() != Criterion.Type.RATING
+          || c.lowName() == null
+          || c.lowName().isEmpty()
+          || c.highName() == null
+          || c.highName().isEmpty()) {
+        continue;
+      }
+      String low = c.isRank() ? "(낮은 순위)" : "(낮음)";
+      String high = c.isRank() ? "(높은 순위)" : "(높음)";
+      out.put(c.id(), c.lowName() + low + "~" + c.highName() + high);
+    }
+    return out;
+  }
+
   private static Map<String, Object> linked(Object... kv) {
     Map<String, Object> m = new LinkedHashMap<>();
     for (int i = 0; i < kv.length; i += 2) {
