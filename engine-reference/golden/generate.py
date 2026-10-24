@@ -364,13 +364,72 @@ def question_text_cases() -> dict[str, Any]:
             "fit": crit_json(fit)}
 
 
+# ---------- 10. 응답 조각 조립 (7.3 31·37·39~45번) ----------
+def analysis_helper_cases() -> dict[str, Any]:
+    from app.services import analysis_helpers as ah
+    from tests.engine.example_data import CRIT, build_example  # type: ignore[import-not-found]
+
+    scales, V = build_example()
+    raw = np.array([[189, 1.23, 4], [165, 1.19, 3], [150, 1.45, 4]], dtype=float)
+    cids, cnames = ["c1", "c2", "c3"], ["가격", "무게", "성능"]
+    oids, onames = ["o1", "o2", "o3"], ["갤럭시북", "그램", "요가"]
+    units, levels = ["만 원", "kg", ""], [[], [], ["낮음", "보통", "높음", "매우 높음", "최고"]]
+    rng = np.random.default_rng(5)
+    w_prior = rng.dirichlet(np.ones(3), size=300)
+    scen = ScenarioSpec(0, 1, (0.5, -0.5, 0.0), 20.0, 0.1)
+    runs = [
+        ("two_sliders", [po.Answer(SliderSpec(0, 2), -2), po.Answer(SliderSpec(2, 1), 1)]),
+        ("mixed", [po.Answer(SliderSpec(0, 2), -2), po.Answer(SliderSpec(2, 1), 1), po.Answer(scen, "B"),
+                   po.Answer(SliderSpec(1, 0), None)]),
+    ]
+    out = []
+    for name, answers in runs:
+        post = po.fit(42, 3, answers, n=300)
+        s = po.summary(post, V)
+        st = da.stability(post, V, seed=1)
+        cc = da.change_conditions(s.mean, V)
+        vc = da.value_conditions(s.mean, V, CRIT, scales, raw)
+        top = da.ranking(s.mean, V)[0]
+        out.append({
+            "name": name, "W": mat(post.W), "p": [float(x) for x in post.p], "V": mat(V), "wPrior": mat(w_prior),
+            "answers": [{"spec": spec_json(a.spec), "response": a.response} for a in answers],
+            "raw": mat(raw), "criteria": [criterion_json(c) for c in CRIT], "scales": scales_json(scales),
+            "ids": {"criterionIds": cids, "criterionNames": cnames, "optionIds": oids, "optionNames": onames,
+                    "units": units, "levels": levels},
+            "estimate": ah.estimate_payload(s, V, cids),
+            "weightsItems": ah.weights_items(s, cids, cnames, answers, w_prior),
+            "rankingsItems": ah.rankings_items(s.mean, V, s.p_best, oids, onames),
+            "stability": ah.stability_payload(st, s.p_best, cc, oids, onames, cnames),
+            "changeConditions": ah.change_conditions_payload(cc, top, cids, cnames, oids, onames, vc, units, levels),
+            "topProbability": ah.top_probability(s, V),
+        })
+    hid = hidden_cases()
+    mism = hp.detect(np.array(hid["W"]), [po.Answer(  # 같은 입력으로 다시 계산
+        __import__("app.engine.likelihood", fromlist=["x"]).SliderSpec(a["spec"]["a"], a["spec"]["b"]), a["response"])
+        if a["spec"]["type"] == "slider" else po.Answer(
+        ScenarioSpec(a["spec"]["a"], a["spec"]["b"], tuple(a["spec"]["delta"]), a["spec"]["rawA"], a["spec"]["rawB"]),
+        a["response"]) for a in hid["answers"]])
+    particles = ["가격", "무게", "갤럭시북", "서울", "A", "L", "R", "7", "가격(만 원)", "그램", "N3", ""]
+    return {
+        "cases": out,
+        "hidden": {"mismatches": [{"statedOver": m.stated_over, "revealedOver": m.revealed_over,
+                                   "statedP": m.stated_p, "revealedP": m.revealed_p, "nScenarios": m.n_scenarios}
+                                  for m in mism],
+                   "payload": ah.hidden_preferences_payload(mism, cids, cnames)},
+        "expectedRange": [{"kind": k, "K": K, "answered": a, "limit": lim, "result": ah.expected_range(k, K, a, lim)}
+                          for k, K, a, lim in (("initial", 3, 0, 6), ("initial", 8, 2, 12), ("extra", 3, 6, 9))],
+        "particles": [{"word": w, "iGa": ah.i_ga(w), "eulReul": ah.eul_reul(w), "euRo": ah.eu_ro(w)} for w in particles],
+        "lowConfidence": [{"p": x, "result": ah.low_confidence(x)} for x in (0.2, 0.549, 0.55, 0.9)],
+    }
+
+
 def main() -> None:
     out_dir = Path(sys.argv[1] if len(sys.argv) > 1 else "golden-out")
     out_dir.mkdir(parents=True, exist_ok=True)
     files = {
         "normalize": normalize_cases(), "likelihood": likelihood_cases(), "selector": selector_cases(),
         "analysis": analysis_cases(), "stopping": stopping_cases(), "hidden": hidden_cases(),
-        "posterior": posterior_stats(), "staterules": state_rules_cases(), "questiontext": question_text_cases(),
+        "posterior": posterior_stats(), "staterules": state_rules_cases(), "questiontext": question_text_cases(), "analysishelpers": analysis_helper_cases(),
     }
     for name, data in files.items():
         (out_dir / f"{name}.json").write_text(json.dumps(data, ensure_ascii=False, allow_nan=False), encoding="utf-8")

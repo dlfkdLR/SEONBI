@@ -16,10 +16,10 @@ import java.util.Map;
 public final class Golden {
 
   /** 결정적 계산 비교 허용 오차 (개발기획서 14). */
-  static final double TOL = 1e-9;
+  public static final double TOL = 1e-9;
 
   /** 난수가 들어가는 값 비교 허용 오차. */
-  static final double RANDOM_TOL = 0.03;
+  public static final double RANDOM_TOL = 0.03;
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -36,7 +36,7 @@ public final class Golden {
     }
   }
 
-  static double[] vec(JsonNode n) {
+  public static double[] vec(JsonNode n) {
     double[] out = new double[n.size()];
     for (int i = 0; i < out.length; i++) {
       out[i] = n.get(i).asDouble();
@@ -44,7 +44,7 @@ public final class Golden {
     return out;
   }
 
-  static double[][] mat(JsonNode n) {
+  public static double[][] mat(JsonNode n) {
     double[][] out = new double[n.size()][];
     for (int i = 0; i < out.length; i++) {
       out[i] = vec(n.get(i));
@@ -52,7 +52,7 @@ public final class Golden {
     return out;
   }
 
-  static List<String> strings(JsonNode n) {
+  public static List<String> strings(JsonNode n) {
     List<String> out = new ArrayList<>();
     n.forEach(x -> out.add(x.asText()));
     return out;
@@ -70,7 +70,7 @@ public final class Golden {
     };
   }
 
-  static Response response(JsonNode n) {
+  public static Response response(JsonNode n) {
     if (n == null || n.isNull()) {
       return Response.DONT_KNOW;
     }
@@ -80,13 +80,13 @@ public final class Golden {
     return "A".equals(n.asText()) ? Response.Choice.A : Response.Choice.B;
   }
 
-  static List<Answer> answers(JsonNode n) {
+  public static List<Answer> answers(JsonNode n) {
     List<Answer> out = new ArrayList<>();
     n.forEach(x -> out.add(new Answer(spec(x.get("spec")), response(x.get("response")))));
     return out;
   }
 
-  static Criterion criterion(JsonNode n) {
+  public static Criterion criterion(JsonNode n) {
     return new Criterion(
         n.get("id").asText(),
         Criterion.Type.valueOf(n.get("type").asText().toUpperCase()),
@@ -97,13 +97,13 @@ public final class Golden {
         n.get("scaleMax").isNull() ? null : n.get("scaleMax").asDouble());
   }
 
-  static List<Criterion> criteria(JsonNode n) {
+  public static List<Criterion> criteria(JsonNode n) {
     List<Criterion> out = new ArrayList<>();
     n.forEach(x -> out.add(criterion(x)));
     return out;
   }
 
-  static Map<String, Scale> scales(JsonNode n) {
+  public static Map<String, Scale> scales(JsonNode n) {
     Map<String, Scale> out = new LinkedHashMap<>();
     n.fields()
         .forEachRemaining(
@@ -114,7 +114,7 @@ public final class Golden {
     return out;
   }
 
-  static Integer optInt(JsonNode n) {
+  public static Integer optInt(JsonNode n) {
     return n == null || n.isNull() ? null : n.asInt();
   }
 }
