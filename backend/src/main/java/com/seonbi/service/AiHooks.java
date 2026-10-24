@@ -1,8 +1,10 @@
 package com.seonbi.service;
 
+import com.seonbi.ai.CallType;
 import com.seonbi.ai.DefaultCriteria;
 import com.seonbi.ai.LlmCalls;
 import com.seonbi.ai.LlmCalls.CriteriaRecommendation;
+import com.seonbi.ai.LlmRouter;
 import com.seonbi.ai.LlmSchemas.RecommendCriterion;
 import com.seonbi.ai.LlmSchemas.RecommendedOption;
 import com.seonbi.ai.Prompts.DecisionContext;
@@ -40,12 +42,24 @@ public class AiHooks
   private final LlmCalls calls;
   private final AiUsageService usage;
   private final EntityManager em;
+  private final LlmRouter router;
 
-  public AiHooks(QuestionFlowService flow, LlmCalls calls, AiUsageService usage, EntityManager em) {
+  public AiHooks(
+      QuestionFlowService flow,
+      LlmCalls calls,
+      AiUsageService usage,
+      EntityManager em,
+      LlmRouter router) {
     this.flow = flow;
     this.calls = calls;
     this.usage = usage;
     this.em = em;
+    this.router = router;
+  }
+
+  /** 이 호출에 쓰는 모델이 실제 제공자가 아닌 fake(테스트·로컬 기본)인가. fake는 AI 추천으로 치지 않는다. */
+  private boolean usesFake(CallType call) {
+    return "fake".equals(router.settings().primaryFor(call).provider());
   }
 
   @Override
@@ -109,7 +123,9 @@ public class AiHooks
   @Transactional
   public Map<String, Object> criteria(Decision d) {
     // 23번은 상한을 넘어도 오류 대신 기본 기준 목록을 돌려준다(12.2)
-    if (usage.exceeded(d.getClientId(), "recommend_criteria")) {
+    // (실제 제공자를 설정하지 않은 로컬·테스트 환경도 같은 목록을 template으로 돌려준다)
+    if (usesFake(CallType.RECOMMEND_CRITERIA)
+        || usage.exceeded(d.getClientId(), "recommend_criteria")) {
       return criteriaResult(DefaultCriteria.forCategory(d.getCategory()), "template");
     }
     CriteriaRecommendation r =
@@ -120,6 +136,10 @@ public class AiHooks
   @Override
   @Transactional
   public Map<String, Object> options(Decision d, int count) {
+    if (usesFake(CallType.RECOMMEND_OPTIONS)) { // 실제 제공자가 없으면 기능을 쓸 수 없다(6.2: 실패 시 기능 숨김)
+      throw new FlowError(
+          HttpStatus.SERVICE_UNAVAILABLE, "AI_UNAVAILABLE", "지금은 선택지 추천을 사용할 수 없어요.", Map.of());
+    }
     usage.checkOrThrow(d.getClientId(), "recommend_options"); // 넘으면 429
     Optional<List<RecommendedOption>> r =
         calls.recommendOptions(context(d), count, usage.recorder(d.getClientId(), d.getId()));
