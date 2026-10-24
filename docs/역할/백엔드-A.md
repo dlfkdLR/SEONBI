@@ -200,24 +200,24 @@ void checkAndCount(String clientId, String callType);   // 초과 시 AI_QUOTA_E
 - [x] 가상 사용자 시뮬레이션: 구매형·진로형, EIG vs 랜덤 (`docs/실험/시뮬레이션-결과.md`)
 - [x] PyMC NUTS 교차검증 ±0.03 (`docs/실험/PyMC-교차검증.md`)
 
-### (b) 자바 이식 — 아직 하나도 하지 않았다
+### (b) 자바 이식 — 엔진 7개 클래스 완료, 서비스·AI 계층은 B의 엔티티 이후
 
 위에서 아래로 의존 순서다. 엔진 이식(1~3)은 B의 엔티티를 기다리지 않고 시작할 수 있다.
 
 **준비**
-- [ ] 기존 `backend/`의 파이썬 코드를 `engine-reference/`로 이동(`app/`, `tests/`, `notebooks/`, `pyproject.toml`, `uv.lock`). B가 Spring Boot 골격을 `backend/`에 올리는 시점과 순서를 맞춘다. 이동 후 파이썬 테스트가 그대로 통과하는지 확인. **이식이 끝나기 전에는 파이썬 코드를 지우지 않는다**
-- [ ] 골든 파일 생성기 작성(`engine-reference/`): 같은 입력으로 정규화 행렬·우도·전환점·5.12 수치·질문 선택 결과를 JSON으로 저장 → `backend/src/test/resources/golden/`
+- [x] 기존 `backend/`의 파이썬 코드를 `engine-reference/`로 이동(`app/`, `tests/`, `notebooks/`, `pyproject.toml`, `uv.lock`). B가 Spring Boot 골격을 `backend/`에 올리는 시점과 순서를 맞춘다. 이동 후 파이썬 테스트가 그대로 통과하는지 확인. **이식이 끝나기 전에는 파이썬 코드를 지우지 않는다**
+- [x] 골든 파일 생성기 작성(`engine-reference/`): 같은 입력으로 정규화 행렬·우도·전환점·5.12 수치·질문 선택 결과를 JSON으로 저장 → `backend/src/test/resources/golden/`
 - [ ] B·C와 이 문서 5절 인터페이스(상태 전이·엔진 입력·LLM 호출·가상 선호 등록) 시그니처 합의
 
 **엔진 이식 — 5.11 순서, 클래스마다 골든 테스트와 함께**
-- [ ] `Normalizer` (`freezeScales`, `normalize`, 필수 조건 필터) — 골든 대조 1e-9
-- [ ] `Likelihood` (슬라이더·기준 A/B·상황형 로그 우도) — 골든 대조 1e-9, 단조성 jqwik
-- [ ] `Posterior` (`Well19937c` 시드 초기화, Dirichlet 입자 4,000, ESS, resample-move, `summary`) — 5.12 표 ±0.03, 같은 시드 재현성
-- [ ] `QuestionSelector` (후보 생성, 상황형 구성·반올림, EIG, 선택 규칙 2·4·5, 가상 질문 제외) — 골든 대조
-- [ ] `Stopping` (`shouldStop`, 추가 라운드: 라운드 안 최소 1문항·`CONFIDENT` 제외, `extraRoundLimit`, `raisedLimit`)
-- [ ] `DecisionAnalysis` (`changeConditions`, `valueConditions` P1, `sensitivity`, 안정성·섭동 유지율) — 전환점 1e-9
-- [ ] `HiddenPreference` (`detect`, `strength`)
-- [ ] 5.13 파라미터를 각 클래스 맨 위 상수로, 5.14 예외 상황 테스트(선택지 1개, 기준 2개, 값이 모두 같음, 전부 "잘 모르겠어요", 동점)
+- [x] `Normalizer` (`freezeScales`, `normalize`, 필수 조건 필터) — 골든 대조 1e-9
+- [x] `Likelihood` (슬라이더·기준 A/B·상황형 로그 우도) — 골든 대조 1e-9, 단조성 jqwik
+- [x] `Posterior` (`Well19937c` 시드 초기화, Dirichlet 입자 4,000, ESS, resample-move, `summary`) — 5.12 표 ±0.03, 같은 시드 재현성
+- [x] `QuestionSelector` (후보 생성, 상황형 구성·반올림, EIG, 선택 규칙 2·4·5, 가상 질문 제외) — 골든 대조
+- [x] `Stopping` (`shouldStop`, 추가 라운드: 라운드 안 최소 1문항·`CONFIDENT` 제외, `extraRoundLimit`, `raisedLimit`)
+- [x] `DecisionAnalysis` (`changeConditions`, `valueConditions` P1, `sensitivity`, 안정성·섭동 유지율) — 전환점 1e-9
+- [x] `HiddenPreference` (`detect`, `strength`) — `detect`만 이식(파이썬 참조 구현에 `strength`는 없음)
+- [x] 5.13 파라미터를 각 클래스 맨 위 상수로, 5.14 예외 상황 테스트(선택지 1개, 기준 2개, 값이 모두 같음, 전부 "잘 모르겠어요", 동점)
 - [ ] 기준 추가 시 K+1차원 재샘플링(같은 시드)·기존 답변 재적용 확인(5.14)
 - [ ] ArchUnit 규칙: `com.seonbi.engine`이 Spring·JPA·`ai`를 import하지 않음
 - [ ] Spotless(google-java-format) + `-Xlint:all` 통과(engine 패키지는 경고도 오류)
