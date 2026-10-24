@@ -31,7 +31,8 @@ public class OpenApiConfiguration {
                                                   new io.swagger.v3.oas.models.media
                                                       .ObjectSchema()));
                               for (String status :
-                                  java.util.List.of("400", "404", "409", "422", "429", "503")) {
+                                  java.util.List.of(
+                                      "400", "404", "405", "409", "422", "429", "500", "503")) {
                                 operation
                                     .getResponses()
                                     .addApiResponse(

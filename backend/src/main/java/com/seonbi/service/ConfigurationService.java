@@ -634,7 +634,10 @@ public class ConfigurationService {
         Set<UUID> expected = optionRows(d).stream().map(Option::getId).collect(Collectors.toSet());
         if (flat.size() != expected.size() || !new HashSet<>(flat).equals(expected))
           throw new FlowError(
-              HttpStatus.BAD_REQUEST, "RANKING_INCOMPLETE", "모든 선택지를 정확히 한 번씩 포함해 주세요.", Map.of());
+              HttpStatus.BAD_REQUEST,
+              "VALIDATION_ERROR",
+              "모든 선택지를 정확히 한 번씩 포함해 주세요.",
+              Map.of("criterionId", c.getId()));
         short rank = 1;
         for (var group : x.order()) {
           for (UUID oid : group) {
@@ -913,7 +916,7 @@ public class ConfigurationService {
           case "career" ->
               List.of(
                   rating("흥미", true),
-                  rating("적성", false),
+                  rating("적성", false, "적합도"),
                   rating("취업·진로 전망", false),
                   numeric("통학 시간", "분"),
                   numeric("학비", "만 원"));
@@ -922,25 +925,25 @@ public class ConfigurationService {
                   rating("효과 기대", false),
                   numeric("비용", "만 원"),
                   numeric("시간 부담", "시간/주"),
-                  rating("난이도 적합", false),
+                  rating("난이도 적합", false, "적합도"),
                   numeric("이동 거리", "분"));
           case "activity" ->
               List.of(
-                  rating("흥미", false),
+                  rating("흥미", false, "끌림"),
                   rating("배울 수 있는 것", false),
                   numeric("시간 부담", "시간/주"),
-                  rating("함께하는 사람", false),
+                  rating("함께하는 사람", false, "만족도"),
                   rating("포트폴리오 도움", false));
           case "living" ->
               List.of(
                   numeric("비용·수입", "만 원"),
                   numeric("거리", "분"),
-                  rating("분위기·환경", false),
+                  rating("분위기·환경", false, "만족도"),
                   rating("시간 유연성", false),
                   rating("안전", false));
           default ->
               List.of(
-                  rating("만족도 기대", false),
+                  rating("만족도 기대", false, "만족도"),
                   numeric("비용", null),
                   numeric("시간", null),
                   rating("위험 부담", false));
@@ -962,7 +965,18 @@ public class ConfigurationService {
         "카테고리 기본 기준");
   }
 
+  private static final Map<String, List<String>> RATING_PRESETS =
+      Map.of(
+          "수준", List.of("매우 낮음", "낮음", "보통", "높음", "매우 높음"),
+          "적합도", List.of("안 맞음", "그럭저럭", "잘 맞음", "매우 잘 맞음"),
+          "끌림", List.of("별로", "그럭저럭", "끌림", "매우 끌림"),
+          "만족도", List.of("매우 불만", "불만", "보통", "만족", "매우 만족"));
+
   private Map<String, Object> rating(String name, boolean rank) {
+    return rating(name, rank, "수준");
+  }
+
+  private Map<String, Object> rating(String name, boolean rank, String preset) {
     return obj(
         "name",
         name,
@@ -973,7 +987,7 @@ public class ConfigurationService {
         "inputMode",
         rank ? "rank" : "score",
         "levels",
-        List.of("매우 낮음", "낮음", "보통", "높음", "매우 높음"),
+        rank ? null : RATING_PRESETS.get(preset),
         "reason",
         "카테고리 기본 기준");
   }

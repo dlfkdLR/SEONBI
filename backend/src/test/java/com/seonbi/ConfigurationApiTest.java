@@ -125,10 +125,14 @@ class ConfigurationApiTest extends FoundationTest {
     String id = create(), base = "/api/v1/decisions/" + id;
     String a = option(base, "A"), b = option(base, "B");
     String rank = criterion(base, "흥미", "rating", "rank");
-    call(
-        put(base + "/values"),
-        Map.of("rankings", List.of(Map.of("criterionId", rank, "order", List.of(List.of(a))))),
-        400);
+    var incomplete =
+        call(
+            put(base + "/values"),
+            Map.of("rankings", List.of(Map.of("criterionId", rank, "order", List.of(List.of(a))))),
+            400);
+    assertThat(incomplete.path("error").path("code").asText()).isEqualTo("VALIDATION_ERROR");
+    assertThat(incomplete.path("error").path("details").path("criterionId").asText())
+        .isEqualTo(rank);
     call(
         put(base + "/values"),
         Map.of("rankings", List.of(Map.of("criterionId", rank, "order", List.of(List.of(a, b))))),
@@ -241,5 +245,67 @@ class ConfigurationApiTest extends FoundationTest {
     var removed = call(delete(base + "/criteria/" + c), null, 200);
     assertThat(removed.path("invalidatedAnswers").asInt()).isEqualTo(1);
     assertThat(answer.getIsValid()).isFalse();
+  }
+
+  @Test
+  void frameworkAndUnexpectedErrorsUseCommonEnvelope() throws Exception {
+    var missing = call(get("/api/v1/does-not-exist"), null, 404);
+    assertThat(missing.path("error").path("code").asText()).isEqualTo("NOT_FOUND");
+    var unsupported = call(put("/api/v1/decisions"), Map.of(), 405);
+    assertThat(unsupported.path("error").path("code").asText()).isEqualTo("METHOD_NOT_ALLOWED");
+    mvc.perform(put("/api/v1/decisions").header("X-Client-Id", cid))
+        .andExpect(status().isMethodNotAllowed())
+        .andExpect(
+            header()
+                .string(
+                    org.springframework.http.HttpHeaders.ALLOW,
+                    org.hamcrest.Matchers.containsString("GET")));
+    var failure = call(get("/api/v1/test-error"), null, 500);
+    assertThat(failure.path("error").path("code").asText()).isEqualTo("INTERNAL_ERROR");
+    for (var error : List.of(missing, unsupported, failure)) {
+      assertThat(error.path("error").path("message").asText()).isNotBlank();
+      assertThat(error.path("error").path("details").isObject()).isTrue();
+      assertThat(error.has("timestamp")).isFalse();
+    }
+    assertThat(failure.toString())
+        .doesNotContain("private server exception", "IllegalStateException");
+  }
+
+  @Test
+  void categoryTemplatesUseSpecifiedPresets() throws Exception {
+    Map<String, Map<String, List<String>>> expected =
+        Map.of(
+            "purchase", Map.of("성능", List.of("매우 낮음", "낮음", "보통", "높음", "매우 높음")),
+            "career", Map.of("적성", List.of("안 맞음", "그럭저럭", "잘 맞음", "매우 잘 맞음")),
+            "study", Map.of("난이도 적합", List.of("안 맞음", "그럭저럭", "잘 맞음", "매우 잘 맞음")),
+            "activity",
+                Map.of(
+                    "흥미",
+                    List.of("별로", "그럭저럭", "끌림", "매우 끌림"),
+                    "함께하는 사람",
+                    List.of("매우 불만", "불만", "보통", "만족", "매우 만족")),
+            "living", Map.of("분위기·환경", List.of("매우 불만", "불만", "보통", "만족", "매우 만족")),
+            "etc", Map.of("만족도 기대", List.of("매우 불만", "불만", "보통", "만족", "매우 만족")));
+    for (var category : expected.entrySet()) {
+      String id =
+          call(
+                  post("/api/v1/decisions"),
+                  Map.of("title", "추천 확인", "category", category.getKey()),
+                  201)
+              .path("id")
+              .asText();
+      var response = call(post("/api/v1/decisions/" + id + "/criteria/recommendations"), null, 200);
+      assertThat(response.path("source").asText()).isEqualTo("template");
+      for (var preset : category.getValue().entrySet()) {
+        JsonNode item = null;
+        for (var candidate : response.path("items"))
+          if (candidate.path("name").asText().equals(preset.getKey())) item = candidate;
+        assertThat(item).isNotNull();
+        assertThat(item.path("levels")).isEqualTo(mapper.valueToTree(preset.getValue()));
+      }
+      for (var candidate : response.path("items"))
+        if (candidate.path("inputMode").asText().equals("rank"))
+          assertThat(candidate.path("levels").isNull()).isTrue();
+    }
   }
 }

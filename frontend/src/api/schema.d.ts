@@ -493,6 +493,21 @@ export interface operations {
                 };
             };
             /** @description 공통 오류 형식 */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -524,6 +539,21 @@ export interface operations {
             };
             /** @description 공통 오류 형식 */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -611,6 +641,21 @@ export interface operations {
                 };
             };
             /** @description 공통 오류 형식 */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -642,6 +687,21 @@ export interface operations {
             };
             /** @description 공통 오류 형식 */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -725,6 +785,21 @@ export interface operations {
                 };
             };
             /** @description 공통 오류 형식 */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -756,6 +831,21 @@ export interface operations {
             };
             /** @description 공통 오류 형식 */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -843,6 +933,21 @@ export interface operations {
                 };
             };
             /** @description 공통 오류 형식 */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -874,6 +979,21 @@ export interface operations {
             };
             /** @description 공통 오류 형식 */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -959,6 +1079,21 @@ export interface operations {
                 };
             };
             /** @description 공통 오류 형식 */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -990,6 +1125,21 @@ export interface operations {
             };
             /** @description 공통 오류 형식 */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1075,6 +1225,21 @@ export interface operations {
                 };
             };
             /** @description 공통 오류 형식 */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1106,6 +1271,21 @@ export interface operations {
             };
             /** @description 공통 오류 형식 */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1189,6 +1369,21 @@ export interface operations {
                 };
             };
             /** @description 공통 오류 형식 */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1220,6 +1415,21 @@ export interface operations {
             };
             /** @description 공통 오류 형식 */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1307,6 +1517,21 @@ export interface operations {
                 };
             };
             /** @description 공통 오류 형식 */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1338,6 +1563,21 @@ export interface operations {
             };
             /** @description 공통 오류 형식 */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1425,6 +1665,21 @@ export interface operations {
                 };
             };
             /** @description 공통 오류 형식 */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1456,6 +1711,21 @@ export interface operations {
             };
             /** @description 공통 오류 형식 */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1543,6 +1813,21 @@ export interface operations {
                 };
             };
             /** @description 공통 오류 형식 */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1574,6 +1859,21 @@ export interface operations {
             };
             /** @description 공통 오류 형식 */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1657,6 +1957,21 @@ export interface operations {
                 };
             };
             /** @description 공통 오류 형식 */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1688,6 +2003,21 @@ export interface operations {
             };
             /** @description 공통 오류 형식 */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1775,6 +2105,21 @@ export interface operations {
                 };
             };
             /** @description 공통 오류 형식 */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1806,6 +2151,21 @@ export interface operations {
             };
             /** @description 공통 오류 형식 */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1889,6 +2249,21 @@ export interface operations {
                 };
             };
             /** @description 공통 오류 형식 */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1920,6 +2295,21 @@ export interface operations {
             };
             /** @description 공통 오류 형식 */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2003,6 +2393,21 @@ export interface operations {
                 };
             };
             /** @description 공통 오류 형식 */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -2034,6 +2439,21 @@ export interface operations {
             };
             /** @description 공통 오류 형식 */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2115,6 +2535,21 @@ export interface operations {
                 };
             };
             /** @description 공통 오류 형식 */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -2146,6 +2581,21 @@ export interface operations {
             };
             /** @description 공통 오류 형식 */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2233,6 +2683,21 @@ export interface operations {
                 };
             };
             /** @description 공통 오류 형식 */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -2264,6 +2729,21 @@ export interface operations {
             };
             /** @description 공통 오류 형식 */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2346,6 +2826,21 @@ export interface operations {
                 };
             };
             /** @description 공통 오류 형식 */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -2377,6 +2872,21 @@ export interface operations {
             };
             /** @description 공통 오류 형식 */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2465,6 +2975,21 @@ export interface operations {
                 };
             };
             /** @description 공통 오류 형식 */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -2496,6 +3021,21 @@ export interface operations {
             };
             /** @description 공통 오류 형식 */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2580,6 +3120,21 @@ export interface operations {
                 };
             };
             /** @description 공통 오류 형식 */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -2611,6 +3166,21 @@ export interface operations {
             };
             /** @description 공통 오류 형식 */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2699,6 +3269,21 @@ export interface operations {
                 };
             };
             /** @description 공통 오류 형식 */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -2730,6 +3315,21 @@ export interface operations {
             };
             /** @description 공통 오류 형식 */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: Record<string, never>;
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -45,6 +45,11 @@ class FoundationTest {
   @RestController
   @io.swagger.v3.oas.annotations.Hidden
   static class Probe {
+    @GetMapping("/api/v1/test-error")
+    void failure() {
+      throw new IllegalStateException("private server exception");
+    }
+
     @GetMapping("/api/v1/test-client")
     UUID client(@ClientId UUID id) {
       return id;
