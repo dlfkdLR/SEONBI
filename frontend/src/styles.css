@@ -233,3 +233,22 @@ summary { cursor: pointer; font-size: 12px; font-weight: 500; }
   .print-only h2 { font-size: 16px; }
   .matrix-scroll { overflow: visible; }
 }
+
+/* 슬라이더 질문: 양 끝 기준 이름·범위를 위에 크게, 현재 선택을 한 줄 문장으로 */
+.slider-ends { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.slider-ends > div { display: flex; flex-direction: column; gap: 2px; color: var(--color-muted); transition: color 120ms; }
+.slider-ends > div.right { text-align: right; }
+.slider-ends > div.active { color: var(--color-ink); }
+.slider-ends strong { font-size: 18px; line-height: 28px; font-weight: 600; }
+.slider-summary { margin: 4px 0 20px; text-align: center; font-size: 15px; font-weight: 500; }
+.range-labels { font-size: 12px; }
+.range-labels button { color: var(--color-ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+/* 로딩 스켈레톤 */
+.loading-skeleton { display: flex; flex-direction: column; gap: 16px; padding-top: 24px; }
+.skeleton { border-radius: 3px; background: linear-gradient(90deg, #efefef 25%, #f8f8f8 50%, #efefef 75%); background-size: 200% 100%; animation: skeleton-shimmer 1.4s ease-in-out infinite; }
+.skeleton-title { height: 40px; width: 55%; }
+.skeleton-line { height: 18px; width: 80%; }
+.skeleton-line.short { width: 40%; }
+.skeleton-block { height: 180px; width: 100%; margin-top: 16px; }
+@keyframes skeleton-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }

@@ -30,4 +30,7 @@ export function Toast() {
   return toast ? <div className="toast" role="status">{toast}<button onClick={dismiss} aria-label="알림 닫기">×</button></div> : null;
 }
 export function ErrorNotice({ message }: { message: string }) { return <p role="alert" className="error-notice">{message}</p>; }
-export function Loading() { return <main className="page"><p className="muted" role="status">기록을 불러오고 있어요.</p></main>; }
+export function Loading({ label = '불러오고 있어요.' }: { label?: string }) {
+  // 빈 화면 대신 자리만 잡은 막대(스켈레톤)를 보여 줘서 무언가 로딩 중임이 보이게 한다
+  return <main className="page" id="main" aria-busy="true"><div className="page-content loading-skeleton"><p className="muted" role="status">{label}</p><div className="skeleton skeleton-title" /><div className="skeleton skeleton-line" /><div className="skeleton skeleton-line short" /><div className="skeleton skeleton-block" /></div></main>;
+}
