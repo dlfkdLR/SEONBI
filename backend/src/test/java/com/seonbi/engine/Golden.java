@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 /** engine-reference/golden/generate.py가 만든 JSON을 읽는 테스트 보조 도구. */
-final class Golden {
+public final class Golden {
 
   /** 결정적 계산 비교 허용 오차 (개발기획서 14). */
   static final double TOL = 1e-9;
@@ -25,7 +25,7 @@ final class Golden {
 
   private Golden() {}
 
-  static JsonNode load(String name) {
+  public static JsonNode load(String name) {
     try (InputStream in = Golden.class.getResourceAsStream("/golden/" + name + ".json")) {
       if (in == null) {
         throw new IllegalStateException("골든 파일 없음: " + name);
@@ -58,7 +58,7 @@ final class Golden {
     return out;
   }
 
-  static QuestionSpec spec(JsonNode n) {
+  public static QuestionSpec spec(JsonNode n) {
     int a = n.get("a").asInt();
     int b = n.get("b").asInt();
     return switch (n.get("type").asText()) {

@@ -276,13 +276,101 @@ def posterior_stats() -> list[dict[str, Any]]:
     return out
 
 
+# ---------- 8. 상태 머신 규칙 (4.2) ----------
+def state_rules_cases() -> dict[str, Any]:
+    from app.services import state_rules as sr
+
+    checks = []
+    for action in sr.Action:
+        for status in sr.Status:
+            for answered in (0, 1, 3):
+                v = sr.check(action, status, answered=answered)
+                checks.append({"action": action.value, "status": status.value, "answered": answered,
+                               "violation": None if v is None else {"httpStatus": v.http_status, "code": v.code}})
+    transitions = []
+    for name in ("after_question_start", "after_stop_condition", "after_criterion_added", "after_finalize"):
+        for status in sr.Status:
+            try:
+                result: str | None = getattr(sr, name)(status).value
+            except sr.InvalidTransition:
+                result = None
+            transitions.append({"fn": name, "status": status.value, "result": result})
+    rounds = []
+    for status in sr.Status:
+        for extra in (False, True):
+            try:
+                r: str | None = sr.round_kind(status, extra_round_active=extra)
+            except sr.InvalidTransition:
+                r = None
+            rounds.append({"status": status.value, "extra": extra, "result": r})
+    provisional = [{"status": st.value, "answered": a, "result": sr.is_provisional(st, a)}
+                   for st in sr.Status for a in (0, 1, 5)]
+    return {"checks": checks, "transitions": transitions, "rounds": rounds, "provisional": provisional}
+
+
+# ---------- 9. 질문 문장 템플릿 (5.1, 5.5) ----------
+def question_text_cases() -> dict[str, Any]:
+    from app.services import question_text as qt
+
+    def meta(**kw: Any) -> qt.CriterionMeta:
+        return qt.CriterionMeta(**kw)
+
+    price = meta(id="c1", name="가격", type="numeric", direction="lower_better", unit="만 원")
+    weight = meta(id="c2", name="무게", type="numeric", direction="lower_better", unit="kg")
+    perf = meta(id="c3", name="성능", type="rating", levels=["낮음", "보통", "높음", "매우 높음", "최고"])
+    camera = meta(id="c4", name="카메라", type="boolean", direction="true_better")
+    battery = meta(id="c5", name="배터리", type="numeric", direction="higher_better", unit="시간")
+    interest = meta(id="c6", name="흥미", type="rating", input_mode="rank", low_name="학과 A", high_name="학과 B")
+    fit = meta(id="c7", name="적성", type="rating", levels=["안 맞음", "그럭저럭", "잘 맞음", "매우 잘 맞음"],
+               low_name="학과 C")
+    metas = [price, weight, perf, camera, battery, interest]
+    scales = {"c1": Scale(150, 189), "c2": Scale(1.19, 1.45), "c5": Scale(8, 20.5)}
+
+    def crit_json(m: qt.CriterionMeta) -> dict[str, Any]:
+        return {"id": m.id, "name": m.name, "type": m.type, "direction": m.direction, "unit": m.unit,
+                "levels": m.levels, "inputMode": m.input_mode, "lowName": m.low_name, "highName": m.high_name}
+
+    cases: list[dict[str, Any]] = []
+
+    def add(name: str, spec: Any, category: str = "purchase", ranges: dict[str, str] | None = None,
+            ms: list[qt.CriterionMeta] | None = None) -> None:
+        ms = ms or metas
+        try:
+            out: Any = qt.build_question(spec, ms, scales, category, ranges=ranges)
+        except ValueError as e:
+            out = None
+            err = str(e)
+        else:
+            err = None
+        cases.append({"name": name, "spec": spec_json(spec), "category": category, "ranges": ranges,
+                      "criteria": [crit_json(m) for m in ms], "result": out, "error": err})
+
+    add("slider_numeric", SliderSpec(0, 1))
+    add("slider_rating_boolean", SliderSpec(2, 3))
+    add("slider_rank_names", SliderSpec(5, 0))
+    add("slider_ranges_override", SliderSpec(0, 4), ranges={"c1": "150~189만 원 (세일 포함)"})
+    add("ab_criteria", CriteriaABSpec(0, 2))
+    add("scenario_numeric", ScenarioSpec(0, 1, (0.5, -0.5, 0, 0, 0, 0), 20.0, 0.1))
+    add("scenario_higher_better", ScenarioSpec(4, 0, (0, 0, 0, 0, 0.3, 0), 2.5, 10.0), category="career")
+    add("scenario_rating", ScenarioSpec(2, 4, (0, 0, 0.5, 0, -0.2, 0), 2.0, 1.5), category="activity")
+    add("scenario_boolean", ScenarioSpec(3, 1, (0, -0.4, 0, 1.0, 0, 0), 1.0, 0.07), category="living")
+    add("scenario_rank_rejected", ScenarioSpec(5, 0, (0, 0, 0, 0, 0, 0), 1.0, 1.0))
+    add("slider_bad_index", SliderSpec(0, 9))
+    add("slider_same_index", SliderSpec(1, 1))
+    add("rating_without_names", SliderSpec(2, 6), ms=metas + [meta(id="c8", name="x", type="rating")])
+    numbers = [0, 1, 20, 0.1, 0.30000000000000004, 1.19, 12.5, 150, 1e-5, 1234567.89, -3, 0.05, 2.675]
+    return {"cases": cases, "formatNumber": [{"x": x, "text": qt.format_number(x)} for x in numbers],
+            "nouns": {c: qt.noun_for_category(c) for c in ("purchase", "career", "activity", "study", "living", "etc", "zzz")},
+            "fit": crit_json(fit)}
+
+
 def main() -> None:
     out_dir = Path(sys.argv[1] if len(sys.argv) > 1 else "golden-out")
     out_dir.mkdir(parents=True, exist_ok=True)
     files = {
         "normalize": normalize_cases(), "likelihood": likelihood_cases(), "selector": selector_cases(),
         "analysis": analysis_cases(), "stopping": stopping_cases(), "hidden": hidden_cases(),
-        "posterior": posterior_stats(),
+        "posterior": posterior_stats(), "staterules": state_rules_cases(), "questiontext": question_text_cases(),
     }
     for name, data in files.items():
         (out_dir / f"{name}.json").write_text(json.dumps(data, ensure_ascii=False, allow_nan=False), encoding="utf-8")
