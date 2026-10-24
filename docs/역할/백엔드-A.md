@@ -291,7 +291,7 @@ void checkAndCount(String clientId, String callType);   // 초과 시 AI_QUOTA_E
 - **엔진 코드는 테스트 없이 머지하지 않는다**(13.2).
 - 린트·포맷: Spotless(google-java-format) + `-Xlint:all`(engine 패키지는 경고도 오류). 파이썬 참조 구현은 `ruff` + `mypy`(13.2).
 - 테스트와 CI는 Fake 어댑터로 돌린다(키 불필요). Testcontainers가 DB를 띄우므로 Docker가 필요하다(11.2).
-- 브랜치: `backend-a` 작업 브랜치에서 작업하고 끝나면 `dev`에 합친다. `dev`에서 직접 작업하지 않는다. 개발 기준은 `dev`의 `docs/`이고, 문서가 바뀌면 `git pull origin dev`로 받아 오며, PR 대상은 `main`이 아니라 `dev`다(13.2, `docs/개발환경-세팅.md` 0번).
+- 브랜치: `backend-a` 작업 브랜치에서 작업하고 끝나면 `dev`로 PR을 올리고, B·C·프론트의 PR은 A가 검수한 뒤 합친다. `dev`에서 직접 작업하지 않는다. 개발 기준은 `dev`의 `docs/`이고, 문서가 바뀌면 `git pull origin dev`로 받아 오며, PR 대상은 `main`이 아니라 `dev`다(13.2, `docs/개발환경-세팅.md` 0번).
 - 발표 자료에는 실제 측정값만 쓴다. "범용 AI는 틀린다"고 미리 단정하지 않는다(1.5).
 
 ---
