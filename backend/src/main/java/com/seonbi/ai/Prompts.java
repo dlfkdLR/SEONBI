@@ -147,6 +147,8 @@ public final class Prompts {
         dataBlock(spec),
         "작업: title과, 질문 유형에 맞는 optionA/optionB(선택지 설명) 또는 "
             + "leftLabel/rightLabel(슬라이더 양끝 이름)을 쓴다. "
+            + "optionA/optionB는 'A안'처럼 이름만 쓰지 말고, 스펙에 있는 기준 이름과 차이(몇 단계·얼마 더 좋은지)를 "
+            + "그대로 담은 한 문장으로 쓴다. "
             + "숫자·단위는 스펙에 있는 표기를 그대로 쓰고 새 숫자를 만들지 않는다.");
   }
 
