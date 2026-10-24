@@ -18,6 +18,15 @@ export class ApiError extends Error {
   }
 }
 
+/** Message for views that need to show a concise, user-facing API error. */
+export function apiErrorMessage(error: unknown): string {
+  if (error instanceof ApiError && error.code === "NOT_IMPLEMENTED") {
+    return "이 기능은 아직 준비 중이에요.";
+  }
+  if (error instanceof ApiError) return error.message;
+  return "요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.";
+}
+
 export interface DownloadedFile {
   blob: Blob;
   filename: string;

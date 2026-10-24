@@ -90,10 +90,13 @@ export async function retryInputWithClarification(
   input: ExtractInputRequest,
   clarification: string,
 ): Promise<ExtractInputResponse> {
+  const clarifiedText = `${input.text.trim()}\n추가 설명: ${clarification.trim()}`;
+  if (clarifiedText.length > 500) {
+    throw new RangeError("추가 설명을 포함한 입력은 500자 이하여야 합니다.");
+  }
   await rejectInput(decisionId, inputId);
   return extractInput(decisionId, {
     ...input,
-    text: `${input.text.trim()}
-추가 설명: ${clarification.trim()}`,
+    text: clarifiedText,
   });
 }
