@@ -301,7 +301,7 @@ QUESTIONING/ANALYZED에서 B가 따로 챙길 규칙: 14번 `RANKING_UPDATED` �
 **코드·협업 (13.2)**
 - 린트·포맷: Spotless(google-java-format) + `-Xlint:all`.
 - 커밋: 무엇을 했는지 알아볼 수 있게 쓴다(13.2).
-- 브랜치: 각자 자기 브랜치를 만들어 `dev`에 합친다. Spring 골격·엔티티·`core`·스텁은 다른 사람이 기다리므로 작게 먼저 합친다(13.2, `docs/개발환경-세팅.md` 0번).
+- 브랜치: 각자 자기 브랜치를 만들어 `dev`에 합친다. Spring 골격·엔티티·`core`·스텁은 다른 사람이 기다리므로 작게 먼저 합친다. 개발 기준은 `dev`의 `docs/`이고, 문서가 바뀌면 `git pull origin dev`로 받아 오며, PR 대상은 `main`이 아니라 `dev`다(13.2, `docs/개발환경-세팅.md` 0번).
 - API 변경 시 OpenAPI 타입 재생성 커밋 포함.
 
 ---
