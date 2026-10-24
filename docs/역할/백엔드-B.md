@@ -195,7 +195,7 @@ QUESTIONING/ANALYZED에서 B가 따로 챙길 규칙: 14번 `RANKING_UPDATED` �
 
 의존 순서대로 적었다. 위에서부터 진행한다.
 
-**작업 순서 (팀 합의, 2026-10-24)**: 개발은 기획서 v0.5대로 진행한다. **B의 Spring 골격과 JPA 엔티티가 `dev`에 가장 먼저 들어와야** A(서비스·컨트롤러·AI 이식)와 C(스텁 컨트롤러·타입 생성)가 시작할 수 있다. 그래서 7.1을 작게 먼저 끝내 `dev`에 합치고 A·C에게 알린다. 시작 전에 A와 파이썬 코드를 `engine-reference/`로 옮기는 시점을 맞춘다. A는 그동안 엔진 자바 이식을 하므로 B를 기다리지 않는다.
+**작업 순서 (팀 합의, 2026-10-24)**: 개발은 기획서 v0.5대로 진행한다. **B의 Spring 골격과 JPA 엔티티가 `dev`에 가장 먼저 들어와야** A(서비스·컨트롤러·AI 이식)와 C(스텁 컨트롤러·타입 생성)가 시작할 수 있다. 그래서 7.1을 작게 먼저 끝내 `dev`로 PR을 올리고(A가 검수 후 합침) A·C에게 알린다. 시작 전에 A와 파이썬 코드를 `engine-reference/`로 옮기는 시점을 맞춘다. A는 그동안 엔진 자바 이식을 하므로 B를 기다리지 않는다.
 
 ### 7.1 Spring 골격과 공통 환경 (A·C가 기다림)
 - [ ] **기존 파이썬 코드는 A가 `engine-reference/`로 옮긴다 — B는 `backend/`를 Spring 프로젝트로 시작하기 전에 A와 이동 시점을 맞춘다** (B가 파이썬 코드를 지우거나 옮기지 않는다)
@@ -210,7 +210,7 @@ QUESTIONING/ANALYZED에서 B가 따로 챙길 규칙: 14번 `RANKING_UPDATED` �
 - [ ] `HealthController`: `GET /api/health` (`/api/v1` 밖, 클라이언트 ID 불필요, DB 확인 → `200`/`503`)
 - [ ] 8장 `@Entity` 13개 + 리포지토리 전부 (7.2에서 따로 점검)
 - [ ] 공통 기반의 시그니처(6.1)를 A·C와 합의하고 기록
-- [ ] 골격(Gradle 프로젝트 + `core` + 헬스 체크 + 엔티티 + Compose)을 **작게 먼저 `dev`에 합치고** A·C에게 알리기
+- [ ] 골격(Gradle 프로젝트 + `core` + 헬스 체크 + 엔티티 + Compose)을 **작게 먼저 `dev`로 PR을 올리고**(A가 검수 후 합침) A·C에게 알리기
 - [ ] 팀원 전원이 `docker compose up --build` 한 번 돌려 보기
 
 ### 7.2 엔티티 점검
@@ -301,7 +301,7 @@ QUESTIONING/ANALYZED에서 B가 따로 챙길 규칙: 14번 `RANKING_UPDATED` �
 **코드·협업 (13.2)**
 - 린트·포맷: Spotless(google-java-format) + `-Xlint:all`.
 - 커밋: 무엇을 했는지 알아볼 수 있게 쓴다(13.2).
-- 브랜치: 각자 자기 브랜치를 만들어 `dev`에 합친다. Spring 골격·엔티티·`core`·스텁은 다른 사람이 기다리므로 작게 먼저 합친다. 개발 기준은 `dev`의 `docs/`이고, 문서가 바뀌면 `git pull origin dev`로 받아 오며, PR 대상은 `main`이 아니라 `dev`다(13.2, `docs/개발환경-세팅.md` 0번).
+- 브랜치: 각자 자기 브랜치를 만들어 푸시하고 `dev`로 **PR만 올린다.** 검수와 합치기는 A가 한다. Spring 골격·엔티티·`core`·스텁은 다른 사람이 기다리므로 작게 먼저 PR을 올린다. 개발 기준은 `dev`의 `docs/`이고, 문서가 바뀌면 `git pull origin dev`로 받아 오며, PR 대상은 `main`이 아니라 `dev`다(13.2, `docs/개발환경-세팅.md` 0번).
 - API 변경 시 OpenAPI 타입 재생성 커밋 포함.
 
 ---
