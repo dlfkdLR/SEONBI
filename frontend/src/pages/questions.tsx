@@ -34,7 +34,7 @@ export function QuestionInput({question:q,response,onChange}:{question:QuestionD
   if(q.type==='numeric')return <Field label={q.title} type="number" min={-5} max={5} step={1} value={response?.value??''} onValueChange={v=>{if(v!==''&&Number.isInteger(Number(v))&&Number(v)>=-5&&Number(v)<=5)onChange({value:Number(v)});}}/>;
   if(q.type==='free_text')return <ErrorNotice message="자유 입력 질문의 직접 답변 형식은 서버 계약 확정이 필요해요. ‘이유 추가’로 조건을 확인해 반영하거나 건너뛸 수 있어요."/>;
   if(q.type!=='ab_criteria'&&q.type!=='ab_scenario')return <ErrorNotice message="지원하지 않는 서버 질문 유형이에요."/>;
-  return <div className="choice-cards" role="group" aria-label="질문 선택지">{(['A','B'] as const).map(choice=>{const option=choice==='A'?q.payload.optionA:q.payload.optionB;return <button key={choice} className={`choice-card ${response?.choice===choice?'selected':''}`} aria-pressed={response?.choice===choice} onClick={()=>onChange({choice})}><small>{choice}</small><h2>{option?.label}</h2>{option?.description&&<p>{option.description}</p>}{option?.deltas?.map((d,i)=><p key={i}>{d.display}</p>)}</button>;})}</div>;
+  return <div className="choice-cards" role="group" aria-label="질문 선택지">{(['A','B'] as const).map(choice=>{const option=choice==='A'?q.payload.optionA:q.payload.optionB;return <button key={choice} className={`choice-card ${response?.choice===choice?'selected':''}`} aria-pressed={response?.choice===choice} onClick={()=>onChange({choice})}><small>{choice}안</small>{/* 설명이 있으면 그것을 크게(기준 이름과 차이가 담겨 있다), 없으면 라벨(기준 이름) */}<h2>{option?.description||option?.label}</h2>{!option?.description&&option?.deltas?.map((d,i)=><p key={i}>{d.display}</p>)}</button>;})}</div>;
 }
 
 // 서버 값은 음수=오른쪽 기준, 양수=왼쪽 기준이다(기획서 5.1). 화면은 왼쪽 기준이 왼쪽에 오도록 부호를 뒤집어 그린다.
