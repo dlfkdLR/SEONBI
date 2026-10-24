@@ -200,7 +200,7 @@ void checkAndCount(String clientId, String callType);   // 초과 시 AI_QUOTA_E
 - [x] 가상 사용자 시뮬레이션: 구매형·진로형, EIG vs 랜덤 (`docs/실험/시뮬레이션-결과.md`)
 - [x] PyMC NUTS 교차검증 ±0.03 (`docs/실험/PyMC-교차검증.md`)
 
-### (b) 자바 이식 — 엔진 7개 클래스 완료, 서비스·AI 계층은 B의 엔티티 이후
+### (b) 자바 이식 — 엔진 완료(테스트 42개), 서비스·AI 계층은 B의 엔티티 이후
 
 위에서 아래로 의존 순서다. 엔진 이식(1~3)은 B의 엔티티를 기다리지 않고 시작할 수 있다.
 
@@ -218,9 +218,9 @@ void checkAndCount(String clientId, String callType);   // 초과 시 AI_QUOTA_E
 - [x] `DecisionAnalysis` (`changeConditions`, `valueConditions` P1, `sensitivity`, 안정성·섭동 유지율) — 전환점 1e-9
 - [x] `HiddenPreference` (`detect`, `strength`) — `detect`만 이식(파이썬 참조 구현에 `strength`는 없음)
 - [x] 5.13 파라미터를 각 클래스 맨 위 상수로, 5.14 예외 상황 테스트(선택지 1개, 기준 2개, 값이 모두 같음, 전부 "잘 모르겠어요", 동점)
-- [ ] 기준 추가 시 K+1차원 재샘플링(같은 시드)·기존 답변 재적용 확인(5.14)
-- [ ] ArchUnit 규칙: `com.seonbi.engine`이 Spring·JPA·`ai`를 import하지 않음
-- [ ] Spotless(google-java-format) + `-Xlint:all` 통과(engine 패키지는 경고도 오류)
+- [x] 기준 추가 시 K+1차원 재샘플링(같은 시드)·기존 답변 재적용 확인(5.14)
+- [x] ArchUnit 규칙: `com.seonbi.engine`이 Spring·JPA·`ai`를 import하지 않음
+- [x] Spotless(google-java-format) + `-Xlint:all` 통과(engine 패키지는 경고도 오류)
 
 **서비스·상태 전이** (B의 엔티티·리포지토리·`core`가 `dev`에 들어온 뒤)
 - [ ] `EngineBridge`: 엔티티 → 엔진 입력, 엔진 결과 → API ID 변환, 질문별 `origin` 전달
