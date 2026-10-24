@@ -228,21 +228,21 @@ void checkAndCount(String clientId, String callType);   // 초과 시 AI_QUOTA_E
 - [x] `AnalysisHelpers`·`Korean`: 31·37·39~45번 응답 조각 조립과 조사, 골든 테스트로 대조
 - 위 클래스는 엔티티를 모른다. `EngineBridge`·서비스가 B의 엔티티를 읽어 이 클래스들에 넘기는 부분만 남았다.
 
-**서비스·상태 전이** (B의 엔티티·리포지토리·`core`가 `dev`에 들어온 뒤)
-- [ ] `EngineBridge`: 엔티티 → 엔진 입력, 엔진 결과 → API ID 변환, 질문별 `origin` 전달
-- [ ] 상태 전이 서비스(4.2): 시작·종료(37·32·35)·추가 라운드·기준 추가/삭제 훅(`question_limit = max(현재 상한, 현재 답변 수 + 3)`)·확정
-- [ ] 4.2 API별 상태 제약 표를 31~46 공통 검사로 구현
-- [ ] 질문 흐름 서비스: 척도 고정 저장(31번 최초 호출), 질문 `spec`/`display`/`phrasing_source`/`origin`/`info_gain` 저장, 템플릿 문장(5.5 문장 템플릿, 5.1 범위 표기)
-- [ ] 분석 서비스: `analysis_results.decision_version` 비교 → 무효면 재계산·저장
-- [ ] 가상 `slider_pair` 질문·답변 등록 메서드 `addStatedPreference` (`origin = free_text`, `preference_kind = stated`, DRAFT 허용)
-- [ ] `estimate_snapshots` 답변마다 기록
-- [ ] AI 호출 상한 서비스(18·23·28만 셈)
+**서비스·상태 전이** (B의 엔티티 위에 구현 완료, `backend-a`)
+- [x] `EngineBridge`: 엔티티 → 엔진 입력, 엔진 결과 → API ID 변환, 질문별 `origin` 전달 — `service/EngineBridge`
+- [x] 상태 전이 서비스(4.2): 시작·종료(37·32·35)·추가 라운드·기준 추가/삭제 훅(`question_limit = max(현재 상한, 현재 답변 수 + 3)`)·확정 — `QuestionFlowService`(시작·종료·추가 라운드)와 `StateRules`, 기준 추가 훅은 `AiHooks.onCriterionAdded`. 기준 삭제의 답변 무효화는 B 단독(B 문서와 합의)
+- [x] 4.2 API별 상태 제약 표를 31~46 공통 검사로 구현 — `StateRules.check`를 모든 서비스가 호출, 골든 테스트로 모든 칸 대조
+- [x] 질문 흐름 서비스: 척도 고정 저장(31번 최초 호출), 질문 `spec`/`display`/`phrasing_source`/`origin`/`info_gain` 저장, 템플릿 문장(5.5 문장 템플릿, 5.1 범위 표기)
+- [x] 분석 서비스: `analysis_results.decision_version` 비교 → 무효면 재계산·저장 — `AnalysisService`(캐시·FINALIZED 스냅샷·템플릿/AI 문장)
+- [x] 가상 `slider_pair` 질문·답변 등록 메서드 `addStatedPreference` (`origin = free_text`, `preference_kind = stated`, DRAFT 허용) — `QuestionFlowService.addStatedPreference(Decision, 기준A, 기준B, value)`
+- [x] `estimate_snapshots` 답변마다 기록 — 답변 제출·수정마다 기록
+- [x] AI 호출 상한 서비스(18·23·28만 셈) — `AiUsageService`(`AI_DAILY_QUOTA_PER_CLIENT`, 사용량 기록은 요청 트랜잭션 안에서 저장)
 
 **DTO·컨트롤러**
 - [x] 질문·답변·분석 응답 `record` + Bean Validation (7.3 예시 응답과 필드 이름까지 같게) — `com.seonbi.dto`에 record 완료, Bean Validation 어노테이션은 Spring 합류 후(지금은 생성자 검증)
-- [ ] 7.3 예시 응답을 돌려주는 스텁 컨트롤러 먼저 올리기(프론트 연결용, 15장 병렬 원칙)
-- [ ] 질문 API: 31 → 32 → 37 → 33 (P0), 35·36·38 (P1), 34 (P2)
-- [ ] 분석 API: 41·40·44·45 (P0), 39 종합(`provisional`, `lowConfidence`, 설명은 템플릿 먼저), 42·43·46 (P1), 39 숨은 선호 `strength`·40 `statedRank`/`revealedRank` (P1)
+- [x] 7.3 예시 응답을 돌려주는 스텁 컨트롤러 먼저 올리기(프론트 연결용, 15장 병렬 원칙) — 스텁 단계를 건너뛰고 실제 구현을 바로 올림(31~46)
+- [x] 질문 API: 31 → 32 → 37 → 33 (P0), 35·36·38 (P1), 34 (P2) — `QuestionController`
+- [x] 분석 API: 41·40·44·45 (P0), 39 종합(`provisional`, `lowConfidence`, 설명은 템플릿 먼저), 42·43·46 (P1), 39 숨은 선호 `strength`·40 `statedRank`/`revealedRank` (P1) — `AnalysisController`(39·40·41·42·43·44·45·46). 숨은 선호 strength·statedRank·revealedRank 포함
 
 **AI 계층 (자바)**
 - [x] `LlmClient` 인터페이스, `LlmRouter`(`제공자:모델명` 파싱, `LLM_MODEL_FAST/QUALITY`, `LLM_ROUTES`, `LLM_FALLBACK_MODELS`), 서버 시작 시 키 없으면 시작 거부(6.4) — 시작 시 검증은 `LlmRouter.validateSettings()`로 만들어 둠, Spring 기동에 연결하는 일은 B의 골격 이후
@@ -252,13 +252,13 @@ void checkAndCount(String clientId, String callType);   // 초과 시 AI_QUOTA_E
 - [x] 6종 호출 메서드와 제공자 중립 프롬프트(`<user_input>` 분리, 6.3), `extractConditions` 출력은 28번 추출 항목 형식
 - [x] `phraseQuestion` 출력 → 질문 객체 필드 매핑, 서버 값과 다른 숫자가 있으면 버리고 템플릿
 - [x] `explainResult` 숫자 검증(퍼센트·금액·수치·단계 라벨) → 불일치 시 템플릿
-- [ ] `ai_usage_logs` 기록(원문 저장 안 함, 제공자·모델명·토큰 수), 23번은 상한 초과·실패 시 기본 기준 목록
-- [ ] 자동 호출(문장 다듬기·장단점 요약·결과 설명) 결과 캐시 — 같은 질문·같은 분석 버전에서 재호출 안 함
-- [ ] 32·37에 `phraseQuestion`, 39에 `summarizeOptions`·`explainResult` 연결 (실패해도 템플릿으로 흐름 유지)
+- [x] `ai_usage_logs` 기록(원문 저장 안 함, 제공자·모델명·토큰 수), 23번은 상한 초과·실패 시 기본 기준 목록 — `AiUsageService.recorder`, 23번 상한 초과 시 기본 기준(`AiHooks.criteria`)
+- [x] 자동 호출(문장 다듬기·장단점 요약·결과 설명) 결과 캐시 — 같은 질문·같은 분석 버전에서 재호출 안 함 — 문장은 `questions.display`·`phrasing_source`, 요약·설명은 `analysis_results.explanation`에 같은 버전 동안 한 번만
+- [x] 32·37에 `phraseQuestion`, 39에 `summarizeOptions`·`explainResult` 연결 (실패해도 템플릿으로 흐름 유지) — 실제 LLM 제공자가 없으면(fake) 템플릿 문장
 
 **테스트**
-- [ ] 엔진 단위 테스트를 14장 기준으로 채우기 (JUnit 5 + AssertJ + jqwik)
-- [ ] 질문·분석 API 통합 테스트(`@SpringBootTest` + MockMvc + Testcontainers): 상태 전이, **4.2 API별 상태 제약 표의 모든 칸**, 오류 코드·형식
+- [x] 엔진 단위 테스트를 14장 기준으로 채우기 (JUnit 5 + AssertJ + jqwik) — 골든 파일 대조·jqwik·5.12 재현·5.14 예외·ArchUnit
+- [ ] 질문·분석 API 통합 테스트(`@SpringBootTest` + MockMvc + Testcontainers): 상태 전이, **4.2 API별 상태 제약 표의 모든 칸**, 오류 코드·형식 — 진행: 질문 7개·분석 10개 시나리오(실제 DB). 4.2 표의 모든 칸은 `StateRules` 골든 테스트가 대조, API 단위의 칸별 테스트는 남음
 - [x] AI 계층 테스트 (Fake, 스키마 위반·관련 없음·fallback, 어댑터별 녹화 응답) — 어댑터별 요청·응답 변환은 고정 응답으로 검증, 실제 키 녹화는 키 이후
 
 **실험·보정**

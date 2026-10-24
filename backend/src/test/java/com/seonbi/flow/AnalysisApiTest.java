@@ -24,6 +24,7 @@ class AnalysisApiTest extends FlowTestBase {
 
   @Autowired DecisionRepository decisions;
   @Autowired FinalizeService finalizer;
+  @Autowired com.seonbi.service.ExtractionService extraction;
   @Autowired AiUsageService usage;
   @Autowired EntityManager em;
   @Autowired TransactionTemplate tx;
@@ -282,5 +283,34 @@ class AnalysisApiTest extends FlowTestBase {
             .setParameter("id", UUID.fromString(s.id()))
             .getSingleResult();
     assertThat(count).isGreaterThanOrEqualTo(1);
+  }
+
+  @Test
+  void 자유_입력_추출은_상한을_세고_확정된_결정에서는_막힌다() throws Exception {
+    Setup s = laptops();
+    com.seonbi.domain.Decision d = decisions.findById(UUID.fromString(s.id())).orElseThrow();
+    var result =
+        tx.execute(
+            status ->
+                extraction.extract(decisions.findById(d.getId()).orElseThrow(), "윈도우가 필수예요", null));
+    assertThat(result.irrelevant()).isFalse();
+    assertThat(result.items()).isNotEmpty();
+    Long count =
+        em.createQuery(
+                "select count(l) from AiUsageLog l where l.decision.id=:id and l.callType='extract_conditions'",
+                Long.class)
+            .setParameter("id", d.getId())
+            .getSingleResult();
+    assertThat(count).as("28번 호출이 상한 집계에 남는다").isEqualTo(1);
+
+    d.setStatus("FINALIZED");
+    decisions.saveAndFlush(d);
+    assertThatThrownBy(
+            () ->
+                tx.execute(
+                    status ->
+                        extraction.extract(decisions.findById(d.getId()).orElseThrow(), "x", null)))
+        .isInstanceOfSatisfying(
+            FlowError.class, e -> assertThat(e.getCode()).isEqualTo("DECISION_FINALIZED"));
   }
 }
