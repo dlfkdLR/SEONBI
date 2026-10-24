@@ -223,6 +223,8 @@
 
 ### 7.3 타입 생성과 훅 (스텁이 올라온 뒤)
 
+**산출물 소유**: B는 `backend/openapi.json`까지 관리한다. C는 이 명세(또는 실행 중인 `/v3/api-docs`)에서 `frontend/src/api/schema.d.ts`를 생성·커밋하고 API 변경 시 재생성한다. B의 PR에는 프론트 타입 파일을 포함하지 않는다.
+
 - [ ] `openapi-typescript` 설치, 타입 생성 스크립트 등록(`http://localhost:8000/v3/api-docs` → `frontend/src/api/schema.d.ts`), 첫 타입 파일 커밋
 - [ ] 임시 타입을 생성 타입으로 교체
 - [ ] P0 흐름 훅 먼저: 9·10·11·14~17·19~22·24~27·31·32·37·39·47
