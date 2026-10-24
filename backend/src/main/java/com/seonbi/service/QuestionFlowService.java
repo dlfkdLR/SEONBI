@@ -296,9 +296,9 @@ public class QuestionFlowService {
     for (String[] o : options) {
       Object side = payload.get(o[0]);
       if (o[1] != null
-          && !o[1].isEmpty()
           && side instanceof Map<?, ?> m
-          && m.containsKey("description")) {
+          && m.get("description") instanceof String template
+          && informative(template, o[1])) {
         ((Map<String, Object>) side).put("description", o[1]);
       }
     }
@@ -310,6 +310,22 @@ public class QuestionFlowService {
       }
     }
     return new Phrased(out, r.source());
+  }
+
+  /**
+   * AI가 쓴 선택지 설명이 쓸 만한지 본다. "A안"처럼 내용이 없는 문장이 템플릿(기준 이름과 차이를 적은 문장)을 덮어쓰면 사용자가 무엇을 비교하는지 알 수 없다. 8자
+   * 이상이고 템플릿에 나온 단어(기준 이름 등)를 하나라도 포함해야 받아들인다.
+   */
+  static boolean informative(String template, String candidate) {
+    if (candidate == null || candidate.strip().length() < 8) {
+      return false;
+    }
+    for (String word : template.split("[^\\p{L}\\p{N}]+")) {
+      if (word.length() >= 2 && !word.matches("\\d+") && candidate.contains(word)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /** 엔진이 다음 질문을 골라 행으로 만든다(저장은 호출하는 쪽). 낼 질문이 없으면 비어 있다. */
