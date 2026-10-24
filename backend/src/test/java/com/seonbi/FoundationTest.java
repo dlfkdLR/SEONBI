@@ -122,4 +122,15 @@ class FoundationTest {
                 .getSingleResult();
     assertThat(foreignKeys.intValue()).isZero();
   }
+
+  @Test
+  void requiredDecisionColumnsAreNotNullable() {
+    List<?> columns =
+        em.createNativeQuery(
+                "select column_name,is_nullable from information_schema.columns where table_schema='public' and table_name='decisions' and column_name in ('category','status','version','rng_seed')",
+                Object[].class)
+            .getResultList();
+    assertThat(columns).hasSize(4);
+    for (Object row : columns) assertThat(((Object[]) row)[1]).isEqualTo("NO");
+  }
 }

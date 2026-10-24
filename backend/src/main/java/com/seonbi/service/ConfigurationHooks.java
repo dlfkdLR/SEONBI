@@ -8,7 +8,7 @@ public final class ConfigurationHooks {
   private ConfigurationHooks() {}
 
   public interface CriterionAdded {
-    void transitionOnCriterionAdded(Decision decision, UUID criterionId);
+    String onCriterionAdded(Decision decision, UUID criterionId);
   }
 
   public interface Recommendations {

@@ -28,11 +28,12 @@ public class OpenApiConfiguration {
                                               .addProperty("message", new StringSchema())
                                               .addProperty(
                                                   "details",
-                                                  new io.swagger.v3.oas.models.media
-                                                      .ObjectSchema()));
+                                                  new io.swagger.v3.oas.models.media.ObjectSchema()
+                                                      .additionalProperties(true)));
                               for (String status :
                                   java.util.List.of(
-                                      "400", "404", "405", "409", "422", "429", "500", "503")) {
+                                      "400", "404", "405", "406", "409", "415", "422", "429", "500",
+                                      "503")) {
                                 operation
                                     .getResponses()
                                     .addApiResponse(

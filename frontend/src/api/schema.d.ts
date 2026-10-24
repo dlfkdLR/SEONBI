@@ -472,7 +472,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -487,7 +489,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -502,7 +506,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            406: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -517,7 +540,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -532,7 +574,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -547,7 +591,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -562,7 +608,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -577,7 +625,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -620,7 +670,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -635,7 +687,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -650,7 +704,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            406: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -665,7 +738,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -680,7 +772,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -695,7 +789,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -710,7 +806,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -725,7 +823,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -764,7 +864,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -779,7 +881,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -794,7 +898,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            406: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -809,7 +932,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -824,7 +966,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -839,7 +983,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -854,7 +1000,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -869,7 +1017,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -912,7 +1062,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -927,7 +1079,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -942,7 +1096,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            406: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -957,7 +1130,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -972,7 +1164,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -987,7 +1181,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1002,7 +1198,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1017,7 +1215,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1058,7 +1258,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1073,7 +1275,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1088,7 +1292,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            406: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1103,7 +1326,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1118,7 +1360,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1133,7 +1377,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1148,7 +1394,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1163,7 +1411,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1204,7 +1454,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1219,7 +1471,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1234,7 +1488,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            406: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1249,7 +1522,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1264,7 +1556,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1279,7 +1573,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1294,7 +1590,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1309,7 +1607,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1348,7 +1648,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1363,7 +1665,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1378,7 +1682,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            406: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1393,7 +1716,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1408,7 +1750,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1423,7 +1767,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1438,7 +1784,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1453,7 +1801,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1496,7 +1846,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1511,7 +1863,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1526,7 +1880,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            406: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1541,7 +1914,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1556,7 +1948,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1571,7 +1965,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1586,7 +1982,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1601,7 +1999,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1644,7 +2044,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1659,7 +2061,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1674,7 +2078,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            406: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1689,7 +2112,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1704,7 +2146,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1719,7 +2163,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1734,7 +2180,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1749,7 +2197,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1792,7 +2242,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1807,7 +2259,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1822,7 +2276,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            406: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1837,7 +2310,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1852,7 +2344,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1867,7 +2361,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1882,7 +2378,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1897,7 +2395,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1936,7 +2436,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1951,7 +2453,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1966,7 +2470,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            406: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1981,7 +2504,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -1996,7 +2538,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2011,7 +2555,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2026,7 +2572,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2041,7 +2589,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2084,7 +2634,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2099,7 +2651,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2114,7 +2668,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            406: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2129,7 +2702,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2144,7 +2736,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2159,7 +2753,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2174,7 +2770,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2189,7 +2787,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2228,7 +2828,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2243,7 +2845,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2258,7 +2862,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            406: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2273,7 +2896,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2288,7 +2930,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2303,7 +2947,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2318,7 +2964,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2333,7 +2981,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2372,7 +3022,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2387,7 +3039,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2402,7 +3056,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            406: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2417,7 +3090,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2432,7 +3124,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2447,7 +3141,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2462,7 +3158,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2477,7 +3175,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2514,7 +3214,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2529,7 +3231,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2544,7 +3248,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            406: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2559,7 +3282,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2574,7 +3316,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2589,7 +3333,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2604,7 +3350,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2619,7 +3367,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2662,7 +3412,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2677,7 +3429,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2692,7 +3446,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            406: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2707,7 +3480,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2722,7 +3514,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2737,7 +3531,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2752,7 +3548,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2767,7 +3565,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2805,7 +3605,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2820,7 +3622,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2835,7 +3639,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            406: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2850,7 +3673,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2865,7 +3707,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2880,7 +3724,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2895,7 +3741,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2910,7 +3758,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2954,7 +3804,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2969,7 +3821,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2984,7 +3838,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            406: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -2999,7 +3872,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -3014,7 +3906,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -3029,7 +3923,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -3044,7 +3940,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -3059,7 +3957,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -3099,7 +3999,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -3114,7 +4016,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -3129,7 +4033,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            406: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -3144,7 +4067,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -3159,7 +4101,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -3174,7 +4118,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -3189,7 +4135,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -3204,7 +4152,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -3248,7 +4198,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -3263,7 +4215,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -3278,7 +4232,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            406: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -3293,7 +4266,26 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
+                        };
+                    };
+                };
+            };
+            /** @description 공통 오류 형식 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error?: {
+                            code?: string;
+                            message?: string;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -3308,7 +4300,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -3323,7 +4317,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -3338,7 +4334,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };
@@ -3353,7 +4351,9 @@ export interface operations {
                         error?: {
                             code?: string;
                             message?: string;
-                            details?: Record<string, never>;
+                            details?: {
+                                [key: string]: unknown;
+                            };
                         };
                     };
                 };

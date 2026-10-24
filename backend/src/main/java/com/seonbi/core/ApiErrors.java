@@ -19,6 +19,7 @@ public class ApiErrors {
   @ExceptionHandler(FlowError.class)
   public ResponseEntity<Envelope> flow(FlowError e) {
     return ResponseEntity.status(e.getStatus())
+        .contentType(MediaType.APPLICATION_JSON)
         .body(new Envelope(new ErrorBody(e.getCode(), e.getMessage(), e.getDetails())));
   }
 
@@ -39,12 +40,39 @@ public class ApiErrors {
     org.springframework.web.method.annotation.HandlerMethodValidationException.class
   })
   public ResponseEntity<Envelope> malformed(Exception e) {
-    return invalid(Map.of());
+    Map<String, Object> fields = new LinkedHashMap<>();
+    if (e instanceof MethodArgumentTypeMismatchException mismatch)
+      fields.put(mismatch.getName(), "자료형이 올바르지 않습니다.");
+    else if (e
+        instanceof org.springframework.web.bind.MissingServletRequestParameterException missing)
+      fields.put(missing.getParameterName(), "필수 항목입니다.");
+    else if (e instanceof jakarta.validation.ConstraintViolationException violations)
+      violations
+          .getConstraintViolations()
+          .forEach(v -> fields.put(v.getPropertyPath().toString(), v.getMessage()));
+    else if (e instanceof HttpMessageNotReadableException unreadable) {
+      String field = "body";
+      Throwable cause = unreadable.getCause();
+      if (cause instanceof com.fasterxml.jackson.databind.JsonMappingException mapping) {
+        String path =
+            mapping.getPath().stream()
+                .map(
+                    ref ->
+                        ref.getFieldName() != null
+                            ? ref.getFieldName()
+                            : "[" + ref.getIndex() + "]")
+                .collect(java.util.stream.Collectors.joining("."));
+        if (!path.isBlank()) field = path;
+      }
+      fields.put(field, "올바른 JSON 형식과 자료형으로 입력해 주세요.");
+    }
+    if (fields.isEmpty()) fields.put("request", "요청 항목을 확인해 주세요.");
+    return invalid(fields);
   }
 
   @ExceptionHandler(DataIntegrityViolationException.class)
   public ResponseEntity<Envelope> integrity(DataIntegrityViolationException e) {
-    return invalid(Map.of());
+    return invalid(Map.of("request", "데이터 제약조건을 확인해 주세요."));
   }
 
   @ExceptionHandler({
@@ -67,8 +95,31 @@ public class ApiErrors {
                 "지원하지 않는 HTTP 메서드입니다.",
                 Map.of()));
     return ResponseEntity.status(response.getStatusCode())
+        .headers(response.getHeaders())
         .allow(supported == null ? new HttpMethod[0] : supported.toArray(HttpMethod[]::new))
         .body(response.getBody());
+  }
+
+  @ExceptionHandler(org.springframework.web.HttpMediaTypeNotSupportedException.class)
+  public ResponseEntity<Envelope> unsupportedMedia(
+      org.springframework.web.HttpMediaTypeNotSupportedException e) {
+    return flow(
+        new FlowError(
+            HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+            "UNSUPPORTED_MEDIA_TYPE",
+            "지원하지 않는 요청 데이터 형식입니다.",
+            Map.of("Content-Type", "application/json으로 요청해 주세요.")));
+  }
+
+  @ExceptionHandler(org.springframework.web.HttpMediaTypeNotAcceptableException.class)
+  public ResponseEntity<Envelope> unacceptableMedia(
+      org.springframework.web.HttpMediaTypeNotAcceptableException e) {
+    return flow(
+        new FlowError(
+            HttpStatus.NOT_ACCEPTABLE,
+            "NOT_ACCEPTABLE",
+            "지원하지 않는 응답 데이터 형식입니다.",
+            Map.of("Accept", "application/json 응답을 허용해 주세요.")));
   }
 
   @ExceptionHandler(Exception.class)

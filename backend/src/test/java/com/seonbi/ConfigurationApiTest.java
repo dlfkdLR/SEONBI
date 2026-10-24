@@ -26,8 +26,10 @@ class ConfigurationApiTest extends FoundationTest {
     @Bean
     ConfigurationHooks.CriterionAdded transition() {
       return (d, id) -> {
+        String previous = d.getStatus();
         d.setStatus("QUESTIONING");
         d.setQuestionLimit(3);
+        return "QUESTIONING".equals(previous) ? null : "QUESTIONING";
       };
     }
   }
@@ -146,7 +148,7 @@ class ConfigurationApiTest extends FoundationTest {
     assertThat(call(get(base + "/values"), null, 200).path("rankings").get(0).path("order").size())
         .isEqualTo(2);
     var added = call(post(base + "/criteria"), Map.of("name", "적성", "type", "rating"), 201);
-    assertThat(added.path("statusChanged").asText()).isEqualTo("QUESTIONING");
+    assertThat(added.path("statusChanged").isNull()).isTrue();
     for (int i = 0; i < 5; i++) option(base, "추가" + i);
     assertThat(
             call(post(base + "/options"), Map.of("name", "초과"), 409)
@@ -206,6 +208,19 @@ class ConfigurationApiTest extends FoundationTest {
                 .path("$ref")
                 .asText());
     assertThat(put.path("parameters").toString()).contains("X-Client-Id");
+    assertThat(
+            put.path("responses")
+                .path("400")
+                .path("content")
+                .path("application/json")
+                .path("schema")
+                .path("properties")
+                .path("error")
+                .path("properties")
+                .path("details")
+                .path("additionalProperties")
+                .asBoolean())
+        .isTrue();
     java.nio.file.Files.createDirectories(java.nio.file.Path.of("build"));
     java.nio.file.Files.writeString(java.nio.file.Path.of("build/openapi.json"), json);
   }
@@ -306,6 +321,175 @@ class ConfigurationApiTest extends FoundationTest {
       for (var candidate : response.path("items"))
         if (candidate.path("inputMode").asText().equals("rank"))
           assertThat(candidate.path("levels").isNull()).isTrue();
+    }
+  }
+
+  @Test
+  void mediaTypeErrorsPreserveStatusAndJsonEnvelope() throws Exception {
+    mvc.perform(
+            post("/api/v1/decisions")
+                .header("X-Client-Id", cid)
+                .contentType("text/plain")
+                .content("hello"))
+        .andExpect(status().isUnsupportedMediaType())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.error.code").value("UNSUPPORTED_MEDIA_TYPE"))
+        .andExpect(jsonPath("$.error.details['Content-Type']").exists());
+    mvc.perform(get("/api/v1/decisions").header("X-Client-Id", cid).accept("application/xml"))
+        .andExpect(status().isNotAcceptable())
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.error.code").value("NOT_ACCEPTABLE"))
+        .andExpect(jsonPath("$.error.details.Accept").exists());
+    mvc.perform(
+            post("/api/v1/decisions")
+                .header("X-Client-Id", cid)
+                .contentType("application/json")
+                .accept("application/xml")
+                .content("{}"))
+        .andExpect(status().isNotAcceptable())
+        .andExpect(jsonPath("$.error.code").value("NOT_ACCEPTABLE"));
+  }
+
+  @Test
+  void validationDetailsIdentifyFields() throws Exception {
+    String id = create(), base = "/api/v1/decisions/" + id;
+    String a = option(base, "같은 이름");
+    assertThat(
+            call(post(base + "/options"), Map.of("name", "같은 이름"), 400)
+                .path("error")
+                .path("details")
+                .has("name"))
+        .isTrue();
+    assertThat(
+            call(post(base + "/options"), Map.of("name", "a".repeat(61)), 400)
+                .path("error")
+                .path("details")
+                .has("name"))
+        .isTrue();
+    String c = criterion(base, "적성", "rating", "score");
+    for (Object invalid : List.of(6, "wrong"))
+      assertThat(
+              call(
+                      put(base + "/values"),
+                      Map.of(
+                          "items",
+                          List.of(Map.of("optionId", a, "criterionId", c, "value", invalid))),
+                      400)
+                  .path("error")
+                  .path("details")
+                  .has("value"))
+          .isTrue();
+    assertThat(
+            call(get("/api/v1/decisions").param("limit", "wrong"), null, 400)
+                .path("error")
+                .path("details")
+                .has("limit"))
+        .isTrue();
+    mvc.perform(
+            post("/api/v1/decisions")
+                .header("X-Client-Id", cid)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.details.body").exists());
+    assertThat(
+            call(
+                    put(base + "/conditions"),
+                    Map.of(
+                        "items",
+                        List.of(
+                            Map.of(
+                                "kind",
+                                "threshold",
+                                "criterionId",
+                                c,
+                                "operator",
+                                "!=",
+                                "value",
+                                3))),
+                    400)
+                .path("error")
+                .path("details")
+                .has("operator"))
+        .isTrue();
+  }
+
+  @Test
+  void smallerScaleCannotInvalidateSavedScores() throws Exception {
+    String id = create(), base = "/api/v1/decisions/" + id;
+    String a = option(base, "A"), c = criterion(base, "적성", "rating", "score");
+    call(
+        put(base + "/values"),
+        Map.of("items", List.of(Map.of("optionId", a, "criterionId", c, "value", 5))),
+        200);
+    int version = repository.findById(UUID.fromString(id)).orElseThrow().getVersion();
+    var rejected =
+        call(patch(base + "/criteria/" + c), Map.of("levels", List.of("낮음", "보통", "높음")), 400);
+    assertThat(rejected.path("error").path("details").has("levels")).isTrue();
+    assertThat(call(get(base + "/criteria"), null, 200).path("items").get(0).path("levels").size())
+        .isEqualTo(5);
+    assertThat(repository.findById(UUID.fromString(id)).orElseThrow().getVersion())
+        .isEqualTo(version);
+    assertThat(call(get(base + "/values"), null, 200).path("items").get(0).path("value").asInt())
+        .isEqualTo(5);
+    call(
+        put(base + "/values"),
+        Map.of("items", List.of(Map.of("optionId", a, "criterionId", c, "value", 3))),
+        200);
+    call(patch(base + "/criteria/" + c), Map.of("levels", List.of("낮음", "보통", "높음")), 200);
+  }
+
+  @Test
+  void criterionAdditionReportsOnlyActualStatusChanges() throws Exception {
+    String id = create(), base = "/api/v1/decisions/" + id;
+    var draft = call(post(base + "/criteria"), Map.of("name", "기준1", "type", "rating"), 201);
+    assertThat(draft.path("statusChanged").isNull()).isTrue();
+    Decision d = repository.findById(UUID.fromString(id)).orElseThrow();
+    d.setStatus("ANALYZED");
+    repository.saveAndFlush(d);
+    var changed = call(post(base + "/criteria"), Map.of("name", "기준2", "type", "rating"), 201);
+    assertThat(changed.path("statusChanged").asText()).isEqualTo("QUESTIONING");
+    var unchanged = call(post(base + "/criteria"), Map.of("name", "기준3", "type", "rating"), 201);
+    assertThat(unchanged.path("statusChanged").isNull()).isTrue();
+  }
+
+  @Test
+  @org.springframework.transaction.annotation.Transactional
+  void listingUsesThreeQueriesForTwentyDecisions() throws Exception {
+    String chosenId = null;
+    for (int i = 0; i < 20; i++) {
+      String id = create(), base = "/api/v1/decisions/" + id;
+      String oid = option(base, "선택지");
+      if (i == 0) {
+        chosenId = id;
+        var f = new com.seonbi.domain.FinalChoice();
+        f.setDecision(em.find(Decision.class, UUID.fromString(id)));
+        f.setOption(em.find(com.seonbi.domain.Option.class, UUID.fromString(oid)));
+        em.persist(f);
+      }
+    }
+    em.flush();
+    em.clear();
+    var stats =
+        em.getEntityManagerFactory().unwrap(org.hibernate.SessionFactory.class).getStatistics();
+    boolean enabled = stats.isStatisticsEnabled();
+    stats.setStatisticsEnabled(true);
+    stats.clear();
+    try {
+      var page = call(get("/api/v1/decisions?limit=20"), null, 200);
+      assertThat(page.path("items").size()).isEqualTo(20);
+      assertThat(stats.getPrepareStatementCount()).isEqualTo(3);
+      boolean found = false;
+      for (var item : page.path("items")) {
+        assertThat(item.path("optionCount").asInt()).isEqualTo(1);
+        if (item.path("id").asText().equals(chosenId)) {
+          assertThat(item.path("finalChoice").path("name").asText()).isEqualTo("선택지");
+          found = true;
+        }
+      }
+      assertThat(found).isTrue();
+    } finally {
+      stats.setStatisticsEnabled(enabled);
     }
   }
 }

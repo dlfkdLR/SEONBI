@@ -112,8 +112,8 @@ String onCriterionAdded(Decision decision, UUID criterionId);
     // ANALYZED면 QUESTIONING으로(추가 라운드, questionLimit = 답변 수 + 3)
     // QUESTIONING이면 questionLimit = max(현재 상한, 현재 답변 수 + 3)
     // 반환값은 statusChanged 값 (19·29번 응답용), 바뀌지 않으면 null
-int onCriterionDeleted(Decision decision, UUID criterionId);
-    // 관련 답변 isValid=false, 무효화한 수 반환 (22번 invalidatedAnswers)
+// 22번 기준 삭제 시 답변 무효화는 B의 ConfigurationService.deleteCriterion 단독 담당.
+// A의 onCriterionDeleted 훅은 두지 않는다. 분석은 version 변경 후 유효 답변으로 재계산한다.
 FinalChoice finalizeDecision(Decision decision, UUID optionId, String memo);
     // 47번. ANALYZED에서만, recommendation_snapshot 채움
 void assertEditable(Decision decision);                              // FINALIZED면 DECISION_FINALIZED 예외

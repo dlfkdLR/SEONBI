@@ -44,29 +44,32 @@ public class ConfigurationService {
     return m;
   }
 
-  static void require(boolean valid) {
+  static void require(boolean valid, String field) {
     if (!valid)
       throw new FlowError(
-          HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "입력 형식이나 범위를 확인해 주세요.", Map.of());
+          HttpStatus.BAD_REQUEST,
+          "VALIDATION_ERROR",
+          "입력 형식이나 범위를 확인해 주세요.",
+          Map.of(field, "입력 형식이나 범위를 확인해 주세요."));
   }
 
   static FlowError conflict(String code) {
     return new FlowError(HttpStatus.CONFLICT, code, "현재 결정에서 수행할 수 없는 작업입니다.", Map.of());
   }
 
-  static void text(String s, int max) {
-    require(s != null && !s.isBlank() && s.length() <= max);
+  static void text(String s, int max, String field) {
+    require(s != null && !s.isBlank() && s.length() <= max, field);
   }
 
   static void category(String s) {
     require(
-        s != null
-            && Set.of("purchase", "career", "study", "activity", "living", "etc").contains(s));
+        s != null && Set.of("purchase", "career", "study", "activity", "living", "etc").contains(s),
+        "category");
   }
 
   static String source(String s) {
     String v = s == null ? "user" : s;
-    require(Set.of("user", "ai_recommended").contains(v));
+    require(Set.of("user", "ai_recommended").contains(v), "source");
     return v;
   }
 
@@ -124,9 +127,9 @@ public class ConfigurationService {
   }
 
   public Map<String, Object> list(UUID cid, String status, String cursor, int limit) {
-    require(limit >= 1 && limit <= 100);
+    require(limit >= 1 && limit <= 100, "limit");
     if (status != null)
-      require(Set.of("DRAFT", "QUESTIONING", "ANALYZED", "FINALIZED").contains(status));
+      require(Set.of("DRAFT", "QUESTIONING", "ANALYZED", "FINALIZED").contains(status), "status");
     Instant time = null;
     UUID last = null;
     if (cursor != null)
@@ -138,7 +141,7 @@ public class ConfigurationService {
         time = Instant.parse(parts[0]);
         last = UUID.fromString(parts[1]);
       } catch (RuntimeException e) {
-        require(false);
+        require(false, "cursor");
       }
     String q =
         "select d from Decision d where d.clientId=:cid and d.deletedAt is null"
@@ -155,8 +158,24 @@ public class ConfigurationService {
     boolean more = ds.size() > limit;
     ds = ds.subList(0, Math.min(limit, ds.size()));
     List<Object> items = new ArrayList<>();
+    Map<UUID, Long> counts = new HashMap<>();
+    Map<UUID, Map<String, Object>> choices = new HashMap<>();
+    if (!ds.isEmpty()) {
+      var ids = ds.stream().map(Decision::getId).toList();
+      em.createQuery(
+              "select o.decision.id,count(o) from Option o where o.decision.id in :ids group by o.decision.id",
+              Object[].class)
+          .setParameter("ids", ids)
+          .getResultList()
+          .forEach(row -> counts.put((UUID) row[0], (Long) row[1]));
+      em.createQuery(
+              "select f.decision.id,f.option.id,f.option.name from FinalChoice f where f.decision.id in :ids",
+              Object[].class)
+          .setParameter("ids", ids)
+          .getResultList()
+          .forEach(row -> choices.put((UUID) row[0], obj("optionId", row[1], "name", row[2])));
+    }
     for (Decision d : ds) {
-      FinalChoice f = em.find(FinalChoice.class, d.getId());
       items.add(
           obj(
               "id",
@@ -166,11 +185,9 @@ public class ConfigurationService {
               "status",
               d.getStatus(),
               "optionCount",
-              rows(Option.class, d).size(),
+              counts.getOrDefault(d.getId(), 0L),
               "finalChoice",
-              f == null
-                  ? null
-                  : obj("optionId", f.getOption().getId(), "name", f.getOption().getName()),
+              choices.get(d.getId()),
               "updatedAt",
               d.getUpdatedAt()));
     }
@@ -225,7 +242,7 @@ public class ConfigurationService {
   public Map<String, Object> patch(UUID id, UUID cid, PatchDecision r) {
     Decision d = edit(id, cid);
     if (r.title() != null) {
-      text(r.title(), 100);
+      text(r.title(), 100, "title");
       d.setTitle(r.title());
     }
     if (r.description() != null) d.setDescription(r.description());
@@ -286,10 +303,10 @@ public class ConfigurationService {
 
   public Map<String, Object> createOption(Decision d, OptionRequest r) {
     resolver.ensureNotFinalized(d);
-    text(r.name(), 60);
+    text(r.name(), 60, "name");
     List<Option> existing = optionRows(d);
     if (existing.size() >= 8) throw conflict("LIMIT_EXCEEDED");
-    require(existing.stream().noneMatch(o -> o.getName().equals(r.name())));
+    require(existing.stream().noneMatch(o -> o.getName().equals(r.name())), "name");
     Option o = new Option();
     o.setDecision(d);
     o.setName(r.name());
@@ -329,10 +346,11 @@ public class ConfigurationService {
     Decision d = edit(id, cid);
     Option o = owned(Option.class, oid, d);
     if (r.name() != null) {
-      text(r.name(), 60);
+      text(r.name(), 60, "name");
       require(
           optionRows(d).stream()
-              .noneMatch(x -> !x.getId().equals(oid) && x.getName().equals(r.name())));
+              .noneMatch(x -> !x.getId().equals(oid) && x.getName().equals(r.name())),
+          "name");
       o.setName(r.name());
     }
     if (r.description() != null) o.setDescription(r.description());
@@ -387,10 +405,11 @@ public class ConfigurationService {
 
   private void configure(Criterion c, CriterionRequest r, Decision d, boolean creating) {
     if (creating || r.name() != null) {
-      text(r.name(), 40);
+      text(r.name(), 40, "name");
       require(
           criterionRows(d).stream()
-              .noneMatch(x -> !x.getId().equals(c.getId()) && x.getName().equals(r.name())));
+              .noneMatch(x -> !x.getId().equals(c.getId()) && x.getName().equals(r.name())),
+          "name");
       c.setName(r.name());
     }
     if (r.type() != null && !r.type().equals(c.getType())) {
@@ -401,41 +420,46 @@ public class ConfigurationService {
       c.setScaleMax(null);
       c.setDirection(null);
     }
-    require(c.getType() != null && Set.of("numeric", "rating", "boolean").contains(c.getType()));
+    require(
+        c.getType() != null && Set.of("numeric", "rating", "boolean").contains(c.getType()),
+        "type");
     if (r.unit() != null) {
-      require(r.unit().length() <= 20);
+      require(r.unit().length() <= 20, "unit");
       c.setUnit(r.unit());
     }
     if ("numeric".equals(c.getType())) {
-      require(r.levels() == null && r.inputMode() == null);
+      require(r.levels() == null, "levels");
+      require(r.inputMode() == null, "inputMode");
       if (r.direction() != null) c.setDirection(r.direction());
       require(
           Set.of("higher_better", "lower_better")
-              .contains(c.getDirection() == null ? "" : c.getDirection()));
+              .contains(c.getDirection() == null ? "" : c.getDirection()),
+          "direction");
       if (r.scaleMin() != null) c.setScaleMin(r.scaleMin());
       if (r.scaleMax() != null) c.setScaleMax(r.scaleMax());
       require(
           c.getScaleMin() == null
               || c.getScaleMax() == null
-              || c.getScaleMin().compareTo(c.getScaleMax()) < 0);
+              || c.getScaleMin().compareTo(c.getScaleMax()) < 0,
+          "scaleMin");
     } else if ("rating".equals(c.getType())) {
-      require(r.scaleMin() == null && r.scaleMax() == null);
-      require(r.direction() == null || r.direction().equals("higher_better"));
+      require(r.scaleMin() == null, "scaleMin");
+      require(r.scaleMax() == null, "scaleMax");
+      require(r.direction() == null || r.direction().equals("higher_better"), "direction");
       c.setDirection("higher_better");
       if (r.inputMode() != null) c.setInputMode(r.inputMode());
-      require(Set.of("score", "rank").contains(c.getInputMode()));
+      require(Set.of("score", "rank").contains(c.getInputMode()), "inputMode");
       if (r.levels() != null) c.setLevels(r.levels());
       if (c.getLevels() == null) c.setLevels(List.of("매우 낮음", "낮음", "보통", "높음", "매우 높음"));
       List<String> l = c.getLevels();
-      require(l.size() >= 3 && l.size() <= 7 && new HashSet<>(l).size() == l.size());
-      l.forEach(x -> text(x, 12));
+      require(l.size() >= 3 && l.size() <= 7 && new HashSet<>(l).size() == l.size(), "levels");
+      l.forEach(x -> text(x, 12, "levels"));
     } else {
-      require(
-          r.levels() == null
-              && r.inputMode() == null
-              && r.scaleMin() == null
-              && r.scaleMax() == null);
-      require(r.direction() == null || r.direction().equals("true_better"));
+      require(r.levels() == null, "levels");
+      require(r.inputMode() == null, "inputMode");
+      require(r.scaleMin() == null, "scaleMin");
+      require(r.scaleMax() == null, "scaleMax");
+      require(r.direction() == null || r.direction().equals("true_better"), "direction");
       c.setDirection("true_better");
     }
     if (creating || r.source() != null) c.setSource(source(r.source()));
@@ -460,8 +484,7 @@ public class ConfigurationService {
       if (hook == null)
         throw new FlowError(
             HttpStatus.CONFLICT, "INVALID_STATE", "기준 추가 상태 전이 서비스 연결이 필요합니다.", Map.of());
-      hook.transitionOnCriterionAdded(d, c.getId());
-      result.put("statusChanged", "QUESTIONING");
+      result.put("statusChanged", hook.onCriterionAdded(d, c.getId()));
     }
     bump(d);
     return result;
@@ -477,6 +500,20 @@ public class ConfigurationService {
     List<OptionValue> old =
         valueRows(d).stream().filter(v -> v.getCriterion().getId().equals(crid)).toList();
     configure(c, r, d, false);
+    if ("rating".equals(c.getType())
+        && "score".equals(c.getInputMode())
+        && Objects.equals(oldType, c.getType())
+        && Objects.equals(oldMode, c.getInputMode())) {
+      int newCount = c.getLevels().size();
+      require(
+          old.stream()
+              .allMatch(
+                  v ->
+                      v.getValueNum() == null
+                          || (v.getValueNum().compareTo(BigDecimal.ONE) >= 0
+                              && v.getValueNum().compareTo(BigDecimal.valueOf(newCount)) <= 0)),
+          "levels");
+    }
     var result = criterion(c);
     if (Boolean.TRUE.equals(c.getScaleFrozen())
         && (!Objects.equals(min, c.getScaleMin())
@@ -593,24 +630,26 @@ public class ConfigurationService {
                 && x.optionId() != null
                 && x.criterionId() != null
                 && x.value() != null
-                && !x.value().isNull());
-        require(seen.add(x.optionId() + "/" + x.criterionId()));
+                && !x.value().isNull(),
+            "value");
+        require(seen.add(x.optionId() + "/" + x.criterionId()), "items");
         Option o = owned(Option.class, x.optionId(), d);
         Criterion c = owned(Criterion.class, x.criterionId(), d);
-        require(!"rank".equals(c.getInputMode()));
+        require(!"rank".equals(c.getInputMode()), "inputMode");
         OptionValue v = value(o, c);
         if ("boolean".equals(c.getType())) {
-          require(x.value().isBoolean());
+          require(x.value().isBoolean(), "value");
           v.setValueBool(x.value().booleanValue());
           v.setValueNum(null);
         } else {
-          require(x.value().isNumber());
+          require(x.value().isNumber(), "value");
           BigDecimal n = x.value().decimalValue();
           if ("rating".equals(c.getType()))
             require(
                 n.stripTrailingZeros().scale() <= 0
                     && n.compareTo(BigDecimal.ONE) >= 0
-                    && n.compareTo(BigDecimal.valueOf(c.getLevels().size())) <= 0);
+                    && n.compareTo(BigDecimal.valueOf(c.getLevels().size())) <= 0,
+                "value");
           v.setValueNum(n);
           v.setValueBool(null);
         }
@@ -623,12 +662,13 @@ public class ConfigurationService {
             x != null
                 && x.criterionId() != null
                 && x.order() != null
-                && ranked.add(x.criterionId()));
+                && ranked.add(x.criterionId()),
+            "rankings");
         Criterion c = owned(Criterion.class, x.criterionId(), d);
-        require("rank".equals(c.getInputMode()));
+        require("rank".equals(c.getInputMode()), "inputMode");
         List<UUID> flat = new ArrayList<>();
         for (var group : x.order()) {
-          require(group != null && !group.isEmpty());
+          require(group != null && !group.isEmpty(), "rankings");
           flat.addAll(group);
         }
         Set<UUID> expected = optionRows(d).stream().map(Option::getId).collect(Collectors.toSet());
@@ -763,32 +803,32 @@ public class ConfigurationService {
   public Condition appendCondition(Decision d, ConditionRequest r, String origin) {
     resolver.ensureNotFinalized(d);
     require(
-        r != null && r.kind() != null && Set.of("threshold", "required_tag").contains(r.kind()));
+        r != null && r.kind() != null && Set.of("threshold", "required_tag").contains(r.kind()),
+        "kind");
     Condition c = new Condition();
     c.setDecision(d);
     c.setKind(r.kind());
     c.setSource("free_text".equals(origin) ? origin : source(r.source()));
     if ("threshold".equals(r.kind())) {
-      require(
-          r.criterionId() != null
-              && r.operator() != null
-              && Set.of("<=", ">=", "==").contains(r.operator())
-              && r.value() != null);
+      require(r.criterionId() != null, "criterionId");
+      require(r.operator() != null && Set.of("<=", ">=", "==").contains(r.operator()), "operator");
+      require(r.value() != null, "value");
       Criterion criterion = owned(Criterion.class, r.criterionId(), d);
-      require(!"rank".equals(criterion.getInputMode()));
+      require(!"rank".equals(criterion.getInputMode()), "criterionId");
       c.setCriterion(criterion);
       c.setOperator(r.operator());
       c.setValue(r.value());
       em.persist(c);
     } else {
-      text(r.label(), 60);
+      text(r.label(), 60, "label");
       c.setLabel(r.label());
       require(
           r.satisfiedBy() != null
-              && new HashSet<>(r.satisfiedBy()).size() == r.satisfiedBy().size());
+              && new HashSet<>(r.satisfiedBy()).size() == r.satisfiedBy().size(),
+          "satisfiedBy");
       em.persist(c);
       for (UUID oid : r.satisfiedBy()) {
-        require(oid != null);
+        require(oid != null, "satisfiedBy");
         var s = new ConditionSatisfaction();
         s.setCondition(c);
         s.setOption(owned(Option.class, oid, d));
@@ -829,7 +869,7 @@ public class ConfigurationService {
     Decision old = resolver.get(id, cid);
     String title =
         request == null || request.title() == null ? old.getTitle() + " (복사본)" : request.title();
-    text(title, 100);
+    text(title, 100, "title");
     Decision d = new Decision();
     d.setTitle(title);
     d.setDescription(old.getDescription());

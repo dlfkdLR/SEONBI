@@ -24,19 +24,19 @@ public class Decision {
   @Column(name = "description", columnDefinition = "text")
   private String description;
 
-  @Column(name = "category", length = 20)
+  @Column(name = "category", length = 20, nullable = false)
   private String category;
 
-  @Column(name = "status", length = 20)
+  @Column(name = "status", length = 20, nullable = false)
   private String status = "DRAFT";
 
-  @Column(name = "rng_seed")
+  @Column(name = "rng_seed", nullable = false)
   private Long rngSeed = java.util.concurrent.ThreadLocalRandom.current().nextLong();
 
   @Column(name = "question_limit")
   private Integer questionLimit;
 
-  @Column(name = "version")
+  @Column(name = "version", nullable = false)
   private Integer version = 1;
 
   @Column(name = "created_at")

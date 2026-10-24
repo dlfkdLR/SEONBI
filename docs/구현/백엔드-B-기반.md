@@ -48,7 +48,8 @@ Java 21과 Docker가 있으면 backend에서 `./gradlew test spotlessCheck`로 �
 
 이 PR은 A의 상태 전이·AI 기능을 구현하지 않는다.
 
-1. `ConfigurationHooks.CriterionAdded` Bean에서 A의 상태 전이 서비스를 호출한다.
+1. `ConfigurationHooks.CriterionAdded` Bean의 `String onCriterionAdded(Decision, UUID)`에서 A의 상태 전이 서비스를 호출한다.
+   반환값을 statusChanged에 그대로 사용한다. 상태가 바뀌지 않으면 null이다.
    B는 status/question_limit을 직접 바꾸지 않는다. 연결 전에는 QUESTIONING/ANALYZED의
    기준 추가를 INVALID_STATE로 거절하고 트랜잭션을 되돌린다. 테스트에서만 가짜 훅을 주입해
    호출 계약을 검증한다. DRAFT의 기준 추가는 정상 동작한다.
@@ -68,3 +69,13 @@ npx --yes openapi-typescript@7.10.1 backend/openapi.json -o frontend/src/api/sch
 ```
 
 프론트 쿼리 훅·화면은 C와 프론트 담당 범위이므로 포함하지 않는다.
+
+## PR #1 추가 검수 반영
+
+- 406/415는 HTTP 상태를 유지하고 Content-Type application/json을 명시해 공통 오류 본문을 반환한다.
+- require(조건, 필드명)으로 서비스 입력 검증에 필드별 details를 제공한다.
+- 단계형 score의 범위 축소가 기존 점수를 무효하게 만들면 400으로 거절하고 전체 변경을 롤백한다.
+- 기준 추가는 A의 String onCriterionAdded 반환 계약 사용. 기준 삭제 시 답변 무효화는 B만 수행한다.
+- 목록은 결정 조회·선택지 수 집계·최종 선택 투영의 3쿼리로 처리한다. 목록당 엔티티 조회 반복을 제거했다.
+- 필수 결정 컬럼 4개에 NOT NULL 추가. DB 초기화 필요.
+- 문서의 오류 코드 표·19/21/29번·8.1 및 17.8을 PR 검토 대상으로 함께 정리했다. 병합은 하지 않는다.
