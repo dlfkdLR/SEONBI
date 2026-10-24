@@ -16,6 +16,7 @@ dependencies {
     implementation("org.apache.commons:commons-math3:3.6.1")
     // AI 계층: JSON 파싱과 출력 스키마 생성 (SDK나 Spring AI는 쓰지 않는다 — 개발기획서 6.4)
     implementation("com.fasterxml.jackson.core:jackson-databind:2.17.2")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.17.2")
     implementation("org.slf4j:slf4j-api:2.0.16")
     implementation("com.github.victools:jsonschema-generator:4.37.0")
     implementation("com.github.victools:jsonschema-module-jackson:4.37.0")

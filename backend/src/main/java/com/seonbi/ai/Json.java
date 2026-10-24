@@ -8,7 +8,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public final class Json {
 
   public static final ObjectMapper MAPPER =
-      new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+      new ObjectMapper()
+          .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule())
+          // 시각은 ISO 8601 문자열로 낸다 (7.1)
+          .configure(
+              com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+          .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
   private Json() {}
 
