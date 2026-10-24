@@ -54,14 +54,6 @@ npm run test:e2e
 
 이 폴더는 `frontend/`입니다(이전 `seonbi/`). 타입 산출물(`src/api/schema.d.ts`)은 `backend/openapi.json`에서 `npx openapi-typescript backend/openapi.json -o frontend/src/api/schema.d.ts`로 다시 만들고, C가 갱신을 맡습니다. C가 만든 요청 함수(`src/api/{decisions,questions,analysis}.ts`, `hooks.ts`)와 앱의 요청 계층(`http.ts`)은 같은 `requestJson`을 씁니다. C의 Node 테스트는 `sh test-api.sh`로 돌립니다.
 
-## Vercel 배포
+## 배포
 
-백엔드(Spring Boot + PostgreSQL)는 Vercel에서 돌릴 수 없어 따로 띄웁니다. 프론트만 Vercel에 올리고, `api/[...path].ts`가 `/api/*` 요청을 환경변수 `BACKEND_URL`(끝에 슬래시 없이)의 서버로 넘깁니다. 같은 origin으로 요청하므로 CORS 설정이 필요 없습니다.
-
-```sh
-cd frontend
-vercel env add BACKEND_URL production    # 백엔드 주소 입력
-vercel deploy --prod
-```
-
-`BACKEND_URL`이 없으면 `/api` 요청은 `503 BACKEND_NOT_CONFIGURED`, 백엔드에 닿지 못하면 `502 BACKEND_UNREACHABLE`을 돌려주고 화면이 오류를 표시합니다.
+저장소 루트의 `docker-compose.yml`로 `frontend`(Nginx) · `api`(Spring Boot) · `db`(PostgreSQL)를 함께 띄웁니다. Nginx가 `/api/*`를 `api:8000`으로 넘기므로 같은 도메인에서 CORS 없이 동작합니다. 환경변수는 루트 `.env.example`을 참고하세요.
