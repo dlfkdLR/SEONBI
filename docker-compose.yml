@@ -1,5 +1,6 @@
 # 선비 전체 구성: frontend(Nginx :80) → api(Spring Boot :8000) → db(PostgreSQL)
-# 값은 환경변수로 받는다. 로컬은 이 파일 옆 .env(.env.example 참고), Dokploy는 Environment 탭에 입력한다.
+# 운영 DB는 Dokploy의 db 컨테이너와 seonbi-pgdata 볼륨에 둔다. Dokploy Environment 탭에서 값을 주입한다.
+# 로컬 Compose를 별도로 실행하면 별개의 개발 DB가 생기며 운영 데이터와 동기화되지 않는다.
 services:
   db:
     image: postgres:16.4
