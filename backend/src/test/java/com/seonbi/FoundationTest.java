@@ -78,7 +78,7 @@ class FoundationTest {
 
   @Test
   @Transactional
-  void ownershipSoftDeleteAndVersion() {
+  void sharedDecisionSoftDeleteAndVersion() {
     UUID client = UUID.randomUUID();
     Decision d = new Decision();
     d.setClientId(client);
@@ -88,10 +88,7 @@ class FoundationTest {
     em.flush();
     assertThat(d.getId().version()).isEqualTo(7);
     assertThat(resolver.get(d.getId(), client).getId()).isEqualTo(d.getId());
-    assertThatThrownBy(() -> resolver.get(d.getId(), UUID.randomUUID()))
-        .isInstanceOf(FlowError.class)
-        .extracting("code")
-        .isEqualTo("NOT_FOUND");
+    assertThat(resolver.get(d.getId(), UUID.randomUUID()).getId()).isEqualTo(d.getId());
     resolver.bumpVersion(d);
     assertThat(d.getVersion()).isEqualTo(2);
     d.setStatus("FINALIZED");

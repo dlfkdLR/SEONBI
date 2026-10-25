@@ -20,7 +20,7 @@ public class DecisionResolver {
   @Transactional(readOnly = true)
   public Decision get(UUID decisionId, UUID clientId) {
     return decisions
-        .findByIdAndClientIdAndDeletedAtIsNull(decisionId, clientId)
+        .findByIdAndDeletedAtIsNull(decisionId)
         .orElseThrow(
             () -> new FlowError(HttpStatus.NOT_FOUND, "NOT_FOUND", "결정을 찾을 수 없습니다.", Map.of()));
   }
