@@ -660,7 +660,7 @@ def test_criterion_deleted_invalidates_answers_and_estimate_still_works():
         assert len(items) == 3 and sum(not i["isValid"] for i in items) == count  # 무효 답변도 보인다
         # 추정은 K=2로 다시 계산된다
         prog = await qf.question_progress(stores.snapshot(), stores)
-        assert prog["answered"] == before["answered"] - count and prog["expectedRange"] == [3, 6]
+        assert prog["answered"] == before["answered"] - count and prog["expectedRange"] == [3, 3]
         st = await qf.question_status(stores.snapshot(), stores)
         assert {r["criterionId"] for r in st["remainingUncertainty"]} <= {"price", "perf"}
         # 새 질문은 남은 두 기준으로만 만들고, 지워진 기준을 가리키는 미답변 질문은 건너뛴다

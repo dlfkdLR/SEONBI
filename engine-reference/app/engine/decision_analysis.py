@@ -95,21 +95,27 @@ def change_conditions(mean: NDArray[np.float64], V: NDArray[np.float64]) -> list
         best: dict[str, tuple[float, int]] = {}
         if wk < 1.0:
             R = (V @ mean - wk * V[:, k]) / (1 - wk)
-            for j in range(V.shape[0]):
-                if j == top:
-                    continue
-                den = (V[top, k] - R[top]) - (V[j, k] - R[j])
-                if abs(den) < 1e-12:
-                    continue
-                t = float((R[j] - R[top]) / den)
-                if not 0 < t < 1 or abs(t - wk) < 1e-12:
-                    continue
-                side = "increase" if t > wk else "decrease"
-                probe = t + _CHECK_EPS if side == "increase" else t - _CHECK_EPS
-                if _top_at(mean, V, k, min(max(probe, 0.0), 1.0)) != j:
-                    continue  # 다른 선택지가 먼저 1위가 됨 → 그 선택지의 전환점이 더 가깝다
-                if side not in best or abs(t - wk) < abs(best[side][0] - wk):
-                    best[side] = (t, j)
+            # 모든 선택지 쌍의 교차점을 모아 wk에서 멀어지는 순서로 훑으며 1위가 처음 바뀌는 곳을 찾는다.
+            # (top과 j만 비교하면 그 사이에 끼어드는 다른 선택지의 짧은 1위 구간을 건너뛴다)
+            n = V.shape[0]
+            crossings: list[float] = []
+            for i in range(n):
+                for j in range(i + 1, n):
+                    den = (V[i, k] - R[i]) - (V[j, k] - R[j])
+                    if abs(den) < 1e-12:
+                        continue
+                    t = float((R[j] - R[i]) / den)
+                    if 0 < t < 1 and abs(t - wk) >= 1e-12:
+                        crossings.append(t)
+            for side in ("increase", "decrease"):
+                up = side == "increase"
+                ahead = sorted({t for t in crossings if (t > wk if up else t < wk)}, reverse=not up)
+                for m, here in enumerate(ahead):
+                    nxt = ahead[m + 1] if m + 1 < len(ahead) else (1.0 if up else 0.0)
+                    leader = _top_at(mean, V, k, (here + nxt) / 2)  # 이 교차점을 지난 직후의 1위
+                    if leader != top:
+                        best[side] = (here, leader)
+                        break
         if not best:
             out.append(ChangeCondition(k, wk, None, None, None))
             continue

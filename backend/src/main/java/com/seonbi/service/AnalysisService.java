@@ -523,15 +523,51 @@ public class AnalysisService {
     for (int i = 0; i < ctx.inp.optionIds().size(); i++) {
       String oid = ctx.inp.optionIds().get(i);
       List<Object> values = new ArrayList<>();
+      int k = 0;
       for (com.seonbi.domain.Criterion c : ctx.data.criteria()) {
         Map<String, Object> cell = new LinkedHashMap<>();
         cell.put("criterion", c.getName());
         cell.put("value", valueLabel(c, vals.get(oid + "/" + c.getId())));
+        // 값만 주면 "가격 150"이 장점인지 단점인지 알 수 없다. 어느 쪽이 좋은지와 이 선택지의 위치를 함께 준다
+        cell.put("betterWhen", betterWhen(c));
+        cell.put("standing", standing(ctx.inp.v(), i, k));
         values.add(cell);
+        k++;
       }
       options.add(details("optionId", oid, "name", ctx.inp.optionNames().get(i), "values", values));
     }
     return details("options", options);
+  }
+
+  static String betterWhen(com.seonbi.domain.Criterion c) {
+    if ("boolean".equals(c.getType())) {
+      return "있을수록 좋음";
+    }
+    if ("rating".equals(c.getType())) {
+      return "높은 단계일수록 좋음";
+    }
+    return "lower_better".equals(c.getDirection()) ? "낮을수록 좋음" : "높을수록 좋음";
+  }
+
+  // 정규화한 값 v[선택지][기준]에서 이 선택지가 이 기준에서 가장 유리한지·불리한지·중간인지
+  static String standing(double[][] v, int option, int criterion) {
+    double max = Double.NEGATIVE_INFINITY;
+    double min = Double.POSITIVE_INFINITY;
+    for (double[] row : v) {
+      max = Math.max(max, row[criterion]);
+      min = Math.min(min, row[criterion]);
+    }
+    if (max - min < 1e-12) {
+      return "차이 없음";
+    }
+    double x = v[option][criterion];
+    if (x >= max - 1e-12) {
+      return "가장 유리";
+    }
+    if (x <= min + 1e-12) {
+      return "가장 불리";
+    }
+    return "중간";
   }
 
   @SuppressWarnings("unchecked")

@@ -1,6 +1,7 @@
 package com.seonbi.engine;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -107,26 +108,39 @@ public final class DecisionAnalysis {
         for (int i = 0; i < v.length; i++) {
           r[i] = (u[i] - wk * v[i][k]) / (1 - wk);
         }
-        for (int j = 0; j < v.length; j++) {
-          if (j == top) {
-            continue;
+        // 모든 선택지 쌍의 교차점을 모아, wk에서 멀어지는 순서로 훑으며 1위가 처음 바뀌는 곳을 찾는다.
+        // (top과 j만 비교하면 그 사이에 끼어드는 다른 선택지의 짧은 1위 구간을 건너뛴다)
+        List<Double> crossings = new ArrayList<>();
+        for (int i = 0; i < v.length; i++) {
+          for (int j = i + 1; j < v.length; j++) {
+            double den = (v[i][k] - r[i]) - (v[j][k] - r[j]);
+            if (Math.abs(den) < 1e-12) {
+              continue;
+            }
+            double t = (r[j] - r[i]) / den;
+            if (0 < t && t < 1 && Math.abs(t - wk) >= 1e-12) {
+              crossings.add(t);
+            }
           }
-          double den = (v[top][k] - r[top]) - (v[j][k] - r[j]);
-          if (Math.abs(den) < 1e-12) {
-            continue;
-          }
-          double t = (r[j] - r[top]) / den;
-          if (!(0 < t && t < 1) || Math.abs(t - wk) < 1e-12) {
-            continue;
-          }
-          int side = t > wk ? 0 : 1; // 0 = 가중치를 올려야 뒤집힘, 1 = 내려야 뒤집힘
-          double probe = side == 0 ? t + CHECK_EPS : t - CHECK_EPS;
-          if (topAt(mean, v, k, Math.min(Math.max(probe, 0.0), 1.0)) != j) {
-            continue; // 다른 선택지가 먼저 1위가 됨 → 그 선택지의 전환점이 더 가깝다
-          }
-          if (bestJ[side] < 0 || Math.abs(t - wk) < Math.abs(bestT[side] - wk)) {
-            bestT[side] = t;
-            bestJ[side] = j;
+        }
+        for (int side = 0; side < 2; side++) {
+          final boolean up = side == 0;
+          List<Double> ahead =
+              crossings.stream()
+                  .filter(t -> up ? t > wk : t < wk)
+                  .sorted(
+                      up ? Comparator.<Double>naturalOrder() : Comparator.<Double>reverseOrder())
+                  .distinct()
+                  .toList();
+          for (int m = 0; m < ahead.size(); m++) {
+            double here = ahead.get(m);
+            double next = m + 1 < ahead.size() ? ahead.get(m + 1) : (up ? 1.0 : 0.0);
+            int leader = topAt(mean, v, k, (here + next) / 2); // 이 교차점을 지난 직후의 1위
+            if (leader != top) {
+              bestT[side] = here;
+              bestJ[side] = leader;
+              break;
+            }
           }
         }
       }

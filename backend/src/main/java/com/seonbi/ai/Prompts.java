@@ -162,7 +162,9 @@ public final class Prompts {
         GUARD,
         "[값 매트릭스]",
         dataBlock(matrix),
-        "각 선택지마다 optionId, pros(장점 목록), cons(단점 목록)를 쓴다. 값에 없는 사실은 쓰지 않는다.");
+        "각 선택지마다 optionId, pros(장점 목록), cons(단점 목록)를 쓴다. 값에 없는 사실은 쓰지 않는다. "
+            + "각 값의 betterWhen(어느 쪽이 좋은지)과 standing(다른 선택지와 견준 위치)을 따라 장점과 단점을 정한다: "
+            + "standing이 '가장 유리'면 장점, '가장 불리'면 단점이고 '중간'이나 '차이 없음'은 쓰지 않아도 된다.");
   }
 
   public static String explainResult(Map<String, Object> analysis) {

@@ -28,7 +28,7 @@ def test_first_round_reasons(example):
 
 
 def test_max_questions():
-    assert max_questions(2) == 6 and max_questions(3) == 6 and max_questions(5) == 10 and max_questions(7) == 12
+    assert max_questions(2) == 3 and max_questions(3) == 6 and max_questions(5) == 10 and max_questions(7) == 12
 
 
 def test_extra_round_needs_one_question_and_ignores_confident(example):

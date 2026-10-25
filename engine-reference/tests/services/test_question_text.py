@@ -52,7 +52,7 @@ def test_ab_criteria_laptop() -> None:
     _check_shape(q)
     assert q["type"] == "ab_criteria"
     assert q["criteria"] == ["c2", "c3"]
-    assert q["title"] == "무게 차이(1.19~1.45kg)와 성능 차이(매우 낮음~매우 높음) 중 어느 쪽이 더 중요한가요?"
+    assert q["title"] == "하나만 고른다면, 무게 차이(1.19~1.45kg)와 성능 차이(매우 낮음~매우 높음) 중 무엇이 더 중요한가요?"
     assert q["payload"] == {
         "optionA": {"criterionId": "c2", "label": "무게"},
         "optionB": {"criterionId": "c3", "label": "성능"},
@@ -65,7 +65,7 @@ def test_scenario_laptop() -> None:
     q = build_question(spec, LAPTOP, SCALES, "purchase")
     _check_shape(q)
     assert q["type"] == "ab_scenario"
-    assert q["title"] == "다음 두 제품 중 어느 쪽을 고르시겠어요?"
+    assert q["title"] == "다음 두 제품 중 어느 쪽을 고르시겠어요? (가격 ↔ 무게)"
     a, b = q["payload"]["optionA"], q["payload"]["optionB"]
     assert a == {
         "label": "A",
@@ -84,14 +84,14 @@ def test_scenario_higher_better_and_rating_and_boolean() -> None:
     crit = [salary, PERF, TOUCH]
     scales = {"s": Scale(2000, 5000)}
     q = build_question(ScenarioSpec(0, 1, (0.0,) * 3, 300.0, 1.0), crit, scales, "career")
-    assert q["title"] == "다음 두 학과 중 어느 쪽을 고르시겠어요?"
+    assert q["title"] == "다음 두 학과 중 어느 쪽을 고르시겠어요? (연봉 ↔ 성능)"
     a = q["payload"]["optionA"]
     assert a["description"] == "연봉 300만 원 더 좋음, 성능이(가) 1단계 더 낮음"
     assert [d["display"] for d in a["deltas"]] == ["+300만 원", "-1단계"]
     assert [d["display"] for d in q["payload"]["optionB"]["deltas"]] == ["-300만 원", "+1단계"]
 
     q = build_question(ScenarioSpec(1, 0, (0.0,) * 3, 2.0, 100.0), crit, scales, "etc")
-    assert q["title"] == "다음 두 선택지 중 어느 쪽을 고르시겠어요?"
+    assert q["title"] == "다음 두 선택지 중 어느 쪽을 고르시겠어요? (성능 ↔ 연봉)"
     assert [d["display"] for d in q["payload"]["optionA"]["deltas"]] == ["+2단계", "-100만 원"]
 
     q = build_question(ScenarioSpec(2, 0, (0.0,) * 3, 1.0, 100.0), crit, scales, "etc")

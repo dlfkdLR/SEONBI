@@ -275,4 +275,28 @@ class ProviderAdaptersTest {
       assertThat(text).as(kind).contains("\"" + kind + "\"");
     }
   }
+
+  // 5xx 뒤 재시도로 성공해도 전송은 2번이므로 사용량도 시도마다 2줄(실패 1 + 성공 1)이어야 한다
+  @Test
+  void 제공자_내부_재시도는_시도마다_사용량으로_남는다() {
+    StubTransport t = new StubTransport().reply(503, "{}").reply(200, geminiBody(PHRASE_JSON));
+    List<com.seonbi.ai.LlmUsage> seen = new ArrayList<>();
+    com.seonbi.ai.LlmRouter router =
+        new com.seonbi.ai.LlmRouter(
+            com.seonbi.ai.LlmSettings.fromEnv(
+                Map.of("LLM_MODEL_FAST", "gemini:m", "GEMINI_API_KEY", "k")),
+            Map.of("gemini", (spec, settings) -> new GeminiAdapter("m", "k", t)),
+            seen::add);
+
+    router
+        .clientFor(com.seonbi.ai.CallType.PHRASE_QUESTION)
+        .completeStructured(PhraseQuestionOutput.class, "p", 100);
+
+    assertThat(t.sent).hasSize(2);
+    assertThat(seen).hasSize(2);
+    assertThat(seen.get(0).success()).isFalse();
+    assertThat(seen.get(1).success()).isTrue();
+    assertThat(seen.get(1).inputTokens()).isEqualTo(12);
+    assertThat(seen).allSatisfy(u -> assertThat(u.callType()).isEqualTo("phrase_question"));
+  }
 }
