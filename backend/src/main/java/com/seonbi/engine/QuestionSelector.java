@@ -86,7 +86,11 @@ public final class QuestionSelector {
     // 같은 쌍·같은 유형이 연달아 나오지 않게 거른다. 다 걸러지면 거르지 않은 후보에서 고른다
     List<Candidate> allowed =
         focused.stream().filter(c -> allowed(c.spec(), history, active.size())).toList();
-    return Optional.of(maxByEig(allowed.isEmpty() ? focused : allowed).spec()); // 동점이면 먼저 생성된 후보
+    // 같은 쌍을 슬라이더·ab_criteria로 이미 물었으면 같은 질문을 말만 바꿔 되묻는 셈이라 뒤로 미룬다 (남는 후보가 없으면 그대로)
+    List<Candidate> unseen =
+        allowed.stream().filter(c -> !repeatsStated(c.spec(), history)).toList();
+    List<Candidate> pool = !unseen.isEmpty() ? unseen : (allowed.isEmpty() ? focused : allowed);
+    return Optional.of(maxByEig(pool).spec()); // 동점이면 먼저 생성된 후보
   }
 
   /** 후보 중 최고 EIG. 종료 판단(LOW_INFO_GAIN)에 쓴다. */
@@ -244,6 +248,15 @@ public final class QuestionSelector {
 
   private static boolean samePair(QuestionSpec x, QuestionSpec y) {
     return java.util.Arrays.equals(pair(x), pair(y));
+  }
+
+  private static boolean isStated(QuestionSpec spec) {
+    return spec instanceof SliderSpec || spec instanceof CriteriaABSpec;
+  }
+
+  /** 진술형(슬라이더·ab_criteria) 후보가 이미 진술형으로 물은 쌍인가. 상황형은 쌍당 2개를 받으므로 해당하지 않는다. */
+  private static boolean repeatsStated(QuestionSpec spec, List<QuestionSpec> history) {
+    return isStated(spec) && history.stream().anyMatch(q -> isStated(q) && samePair(q, spec));
   }
 
   private static boolean allowed(QuestionSpec spec, List<QuestionSpec> history, int nActive) {

@@ -63,7 +63,9 @@ def next_question(
         if scenario is not None:
             return scenario.spec
     allowed = [c for c in focused if _allowed(c.spec, history, len(active))]
-    pool = allowed or focused
+    # 같은 쌍을 슬라이더·ab_criteria로 이미 물었으면 같은 질문을 말만 바꿔 되묻는 셈이라 뒤로 미룬다 (남는 후보가 없으면 그대로)
+    unseen = [c for c in allowed if not _repeats_stated(c.spec, history)]
+    pool = unseen or allowed or focused
     return max(pool, key=lambda c: c.eig).spec  # 동점이면 먼저 생성된 후보
 
 
@@ -173,6 +175,15 @@ def _eig(post: Posterior, shares: NDArray[np.float64], h_now: float, spec: Quest
 
 def _pair(spec: QuestionSpec) -> tuple[int, int]:
     return (min(spec.a, spec.b), max(spec.a, spec.b))
+
+
+def _is_stated(spec: QuestionSpec) -> bool:
+    return isinstance(spec, (SliderSpec, CriteriaABSpec))
+
+
+def _repeats_stated(spec: QuestionSpec, history: Sequence[QuestionSpec]) -> bool:
+    """진술형(슬라이더·ab_criteria) 후보가 이미 진술형으로 물은 쌍인가. 상황형은 쌍당 2개를 받으므로 해당하지 않는다."""
+    return _is_stated(spec) and any(_is_stated(q) and _pair(q) == _pair(spec) for q in history)
 
 
 def _allowed(spec: QuestionSpec, history: Sequence[QuestionSpec], n_active: int) -> bool:
