@@ -18,6 +18,7 @@ import com.seonbi.dto.QuestionDtos.StartQuestionsResponse;
 import com.seonbi.dto.QuestionDtos.StatusResponse;
 import com.seonbi.dto.QuestionDtos.StopResponse;
 import com.seonbi.service.QuestionFlowService;
+import com.seonbi.service.QuestionPhrasing;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import java.util.Map;
@@ -36,7 +37,11 @@ public class QuestionController {
   private final QuestionFlowService flow;
   private final ObjectMapper mapper;
 
-  public QuestionController(QuestionFlowService flow, ObjectMapper mapper) {
+  private final QuestionPhrasing phrasing;
+
+  public QuestionController(
+      QuestionFlowService flow, ObjectMapper mapper, QuestionPhrasing phrasing) {
+    this.phrasing = phrasing;
     this.flow = flow;
     this.mapper = mapper;
   }
@@ -44,13 +49,14 @@ public class QuestionController {
   @PostMapping("/questions/start")
   @Operation(operationId = "startQuestions", summary = "31. 질문 시작")
   public StartQuestionsResponse start(@ClientId UUID cid, @PathVariable("decisionId") UUID id) {
-    return mapper.convertValue(flow.startQuestions(id, cid), StartQuestionsResponse.class);
+    return mapper.convertValue(
+        phrasing.polish(id, cid, flow.startQuestions(id, cid)), StartQuestionsResponse.class);
   }
 
   @GetMapping("/questions/next")
   @Operation(operationId = "getNextQuestion", summary = "32. 다음 질문 조회")
   public NextQuestionResponse next(@ClientId UUID cid, @PathVariable("decisionId") UUID id) {
-    return nextOf(flow.nextQuestion(id, cid));
+    return nextOf(phrasing.polish(id, cid, flow.nextQuestion(id, cid)));
   }
 
   @GetMapping("/questions/status")
@@ -95,7 +101,8 @@ public class QuestionController {
           Map.of("questionId", "UUID 형식이 아닙니다."));
     }
     Map<String, Object> result =
-        flow.submitAnswer(id, cid, questionId, answerMap(request.response()));
+        phrasing.polish(
+            id, cid, flow.submitAnswer(id, cid, questionId, answerMap(request.response())));
     return new SubmitAnswerResponse(
         mapper.convertValue(result.get("answer"), AnswerObject.class),
         mapper.convertValue(result.get("estimate"), Estimate.class),
