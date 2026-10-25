@@ -36,7 +36,10 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * 분석 서비스 39~46번 (개발기획서 4.2, 5.4~5.9, 6.2, 7.3, 12.2). 일반 camelCase 맵을 돌려주고, 컨트롤러가 응답 record로 바꿔 계약을
@@ -79,6 +82,7 @@ public class AnalysisService {
   private final AiUsageService usage;
   private final ObjectProvider<LlmCalls> llm;
   private final ObjectProvider<LlmRouter> router;
+  private final TransactionTemplate tx;
 
   public AnalysisService(
       EntityManager em,
@@ -86,7 +90,9 @@ public class AnalysisService {
       EngineBridge bridge,
       AiUsageService usage,
       ObjectProvider<LlmCalls> llm,
-      ObjectProvider<LlmRouter> router) {
+      ObjectProvider<LlmRouter> router,
+      PlatformTransactionManager transactionManager) {
+    this.tx = new TransactionTemplate(transactionManager);
     this.em = em;
     this.resolver = resolver;
     this.bridge = bridge;
@@ -588,13 +594,36 @@ public class AnalysisService {
         && !"fake".equals(r.settings().primaryFor(call).provider());
   }
 
-  /** AI로 만들되 실패·검증 탈락은 각각 템플릿으로 대체한다 (AI는 선택 사항). */
+  /** AI 호출에 필요한 입력을 미리 모아 둔 것. 호출은 DB 트랜잭션 밖에서 하므로 엔티티가 아니라 값만 담는다. */
+  private record AiPlan(
+      Ctx ctx,
+      Map<String, Object> base,
+      Map<String, Object> templateTexts,
+      Map<String, Object> matrix,
+      Map<String, Object> forAi,
+      UUID clientId,
+      UUID decisionId) {}
+
+  private AiPlan planAi(Ctx ctx, Map<String, Object> base) {
+    Map<String, Object> forAi = new LinkedHashMap<>(base);
+    forAi.remove("computedAt");
+    return new AiPlan(
+        ctx,
+        base,
+        templateTexts(ctx, base),
+        matrixForAi(ctx),
+        forAi,
+        ctx.decision.getClientId(),
+        ctx.decision.getId());
+  }
+
+  /** AI로 만들되 실패·검증 탈락은 각각 템플릿으로 대체한다 (AI는 선택 사항). 트랜잭션 안에서도 밖에서도 부를 수 있다. */
   @SuppressWarnings("unchecked")
-  private Map<String, Object> aiTexts(Ctx ctx, Map<String, Object> base) {
-    Map<String, Object> texts = templateTexts(ctx, base);
+  private Map<String, Object> runAi(AiPlan plan) {
+    Map<String, Object> texts = plan.templateTexts();
     LlmCalls calls = llm.getIfAvailable();
-    var recorder = usage.recorder(ctx.decision.getClientId(), ctx.decision.getId());
-    Optional<List<OptionProsCons>> summaries = calls.summarizeOptions(matrixForAi(ctx), recorder);
+    var recorder = usage.recorder(plan.clientId(), plan.decisionId());
+    Optional<List<OptionProsCons>> summaries = calls.summarizeOptions(plan.matrix(), recorder);
     if (summaries.isPresent()) {
       Map<String, OptionProsCons> byId =
           summaries.get().stream()
@@ -615,9 +644,7 @@ public class AnalysisService {
       }
       texts.put("optionSummaries", merged);
     }
-    Map<String, Object> forAi = new LinkedHashMap<>(base);
-    forAi.remove("computedAt");
-    Optional<LlmCalls.Explanation> ex = calls.explainResult(forAi, recorder);
+    Optional<LlmCalls.Explanation> ex = calls.explainResult(plan.forAi(), recorder);
     if (ex.isPresent()) {
       LlmCalls.Explanation e = ex.get();
       texts.put(
@@ -625,19 +652,29 @@ public class AnalysisService {
           details(
               "summary", e.summary(),
               "reasons", List.copyOf(e.reasons()),
-              "caveats", withBasis(ctx, base, e.caveats()),
+              "caveats", withBasis(plan.ctx(), plan.base(), e.caveats()),
               "source", e.source()));
     }
     return texts;
   }
 
-  private Map<String, Object> texts(Ctx ctx, AnalysisResult cached) {
+  private Map<String, Object> aiTexts(Ctx ctx, Map<String, Object> base) {
+    return runAi(planAi(ctx, base));
+  }
+
+  /** 실제 제공자가 있고 자동 AI 호출 한도(O03)가 남아 있는가. */
+  private boolean wantsAi(Decision d) {
+    return (realLlm(CallType.EXPLAIN_RESULT) || realLlm(CallType.SUMMARIZE_OPTIONS))
+        && usage.autoAllowed(d.getId());
+  }
+
+  private Map<String, Object> texts(Ctx ctx, AnalysisResult cached, boolean allowAi) {
     if (cached.getExplanation() != null) {
       return cached.getExplanation();
     }
     Map<String, Object> base = cached.getPayload();
-    if (!(realLlm(CallType.EXPLAIN_RESULT) || realLlm(CallType.SUMMARIZE_OPTIONS))) {
-      return templateTexts(ctx, base); // 실제 제공자가 없으면 저장하지 않고 매번 계산만 한다
+    if (!allowAi || !wantsAi(ctx.decision)) {
+      return templateTexts(ctx, base); // AI를 못 쓰면 저장하지 않고 매번 계산만 한다
     }
     Map<String, Object> texts = aiTexts(ctx, base);
     cached.setExplanation(texts);
@@ -646,14 +683,54 @@ public class AnalysisService {
 
   // ── 39 ~ 45 ───────────────────────────────────────────────────
 
-  /** 39번. FINALIZED면 확정 시점 결과, 아니면 (캐시된) 계산 결과. */
+  /** 1단계 결과: 바로 줄 수 있으면 응답, AI가 필요하면 호출 계획과 그때의 버전. */
+  private record Prepared(Map<String, Object> ready, AiPlan plan, int version) {}
+
+  /**
+   * 39번. FINALIZED면 확정 시점 결과, 아니면 (캐시된) 계산 결과.
+   *
+   * <p>AI 문장을 새로 만들어야 하면 외부 호출을 DB 트랜잭션 밖에서 한다(1단계 계산·잠금 → 2단계 AI 호출 → 3단계 다시 잠그고 저장). 호출을 기다리는 동안
+   * 결정 행 잠금과 DB 연결을 잡고 있으면 같은 결정의 편집이 막히고 연결 풀이 마른다. 그 사이에 결정이 바뀌었으면(버전 변경) 만든 문장은 버리고 템플릿으로 답한다.
+   */
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
   public Map<String, Object> getAnalysis(UUID decisionId, UUID clientId) {
-    Decision d = writable(decisionId, clientId);
-    return analysisOf(d);
+    Prepared first =
+        tx.execute(
+            status -> {
+              Decision d = writable(decisionId, clientId);
+              Ctx ctx = context(d, Action.ANALYSIS_READ);
+              if (finalizedSnapshot(d).isPresent()) {
+                return new Prepared(analysisOf(d), null, 0);
+              }
+              AnalysisResult cached = base(ctx);
+              if (cached.getExplanation() != null || !wantsAi(d)) {
+                return new Prepared(analysisOf(d, false), null, 0);
+              }
+              return new Prepared(null, planAi(ctx, cached.getPayload()), d.getVersion());
+            });
+    if (first.ready() != null) {
+      return first.ready();
+    }
+    Map<String, Object> aiTexts = runAi(first.plan()); // 트랜잭션 밖
+    return tx.execute(
+        status -> {
+          Decision d = writable(decisionId, clientId);
+          if (d.getVersion() == first.version()) {
+            AnalysisResult cached = base(context(d, Action.ANALYSIS_READ));
+            if (cached.getExplanation() == null) {
+              cached.setExplanation(aiTexts);
+            }
+          }
+          return analysisOf(d, false);
+        });
   }
 
   /** 확정 서비스가 같은 트랜잭션 안에서 부르는 39번 본문 계산. */
   Map<String, Object> analysisOf(Decision d) {
+    return analysisOf(d, true);
+  }
+
+  Map<String, Object> analysisOf(Decision d, boolean allowAi) {
     Ctx ctx = context(d, Action.ANALYSIS_READ);
     Optional<Map<String, Object>> stored = finalizedSnapshot(d);
     if (stored.isPresent()) {
@@ -661,7 +738,7 @@ public class AnalysisService {
     }
     AnalysisResult cached = base(ctx);
     Map<String, Object> base = cached.getPayload();
-    Map<String, Object> texts = texts(ctx, cached);
+    Map<String, Object> texts = texts(ctx, cached, allowAi);
     Map<String, Object> out = new LinkedHashMap<>();
     out.put(
         "provisional",

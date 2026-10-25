@@ -50,11 +50,17 @@ public class AiUsageService {
   public static final List<String> USER_CALL_TYPES =
       List.of("recommend_options", "recommend_criteria", "extract_conditions");
 
+  /** 서버가 자동으로 부르는 호출 종류. 사용자 한도에는 세지 않지만 비용을 막으려고 결정별·전체 일일 상한을 따로 둔다. */
+  public static final List<String> AUTO_CALL_TYPES =
+      List.of("phrase_question", "summarize_options", "explain_result");
+
   private static final Logger log = LoggerFactory.getLogger(AiUsageService.class);
 
   private final EntityManager em;
   private final TransactionTemplate separateTx;
   private final int dailyLimit;
+  private final int autoPerDecision;
+  private final int autoTotal;
   // 클라이언트별 진행 중 호출 수와 직렬화용 자물쇠
   private final ConcurrentHashMap<UUID, AtomicInteger> inFlight = new ConcurrentHashMap<>();
   private final ConcurrentHashMap<UUID, Object> locks = new ConcurrentHashMap<>();
@@ -62,11 +68,48 @@ public class AiUsageService {
   public AiUsageService(
       EntityManager em,
       PlatformTransactionManager transactionManager,
-      @Value("${AI_DAILY_QUOTA_PER_CLIENT:50}") int dailyLimit) {
+      @Value("${AI_DAILY_QUOTA_PER_CLIENT:50}") int dailyLimit,
+      @Value("${AI_AUTO_DAILY_PER_DECISION:40}") int autoPerDecision,
+      @Value("${AI_AUTO_DAILY_TOTAL:3000}") int autoTotal) {
     this.em = em;
     this.separateTx = new TransactionTemplate(transactionManager);
     this.separateTx.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     this.dailyLimit = dailyLimit;
+    this.autoPerDecision = autoPerDecision;
+    this.autoTotal = autoTotal;
+  }
+
+  /**
+   * 자동 AI 호출(문장 다듬기·장단점·설명)을 지금 해도 되는가. 결정 하나가 오늘 쓴 시도 수와 서버 전체가 오늘 쓴 시도 수가 상한 아래일 때만 true다. 입력을 계속
+   * 바꿔 새 분석을 만들게 하는 방식으로 비용을 키우지 못하게 한다. 막히면 호출하지 않고 템플릿 문장을 쓴다.
+   */
+  public boolean autoAllowed(UUID decisionId) {
+    Instant since = LocalDate.now(ZoneOffset.UTC).atStartOfDay().toInstant(ZoneOffset.UTC);
+    return Boolean.TRUE.equals(
+        separateTx.execute(
+            status -> {
+              long total =
+                  em.createQuery(
+                          "select count(l) from AiUsageLog l where l.callType in :types and"
+                              + " l.createdAt>=:since",
+                          Long.class)
+                      .setParameter("types", AUTO_CALL_TYPES)
+                      .setParameter("since", since)
+                      .getSingleResult();
+              if (total >= autoTotal) {
+                return false;
+              }
+              long mine =
+                  em.createQuery(
+                          "select count(l) from AiUsageLog l where l.decision.id=:id and"
+                              + " l.callType in :types and l.createdAt>=:since",
+                          Long.class)
+                      .setParameter("id", decisionId)
+                      .setParameter("types", AUTO_CALL_TYPES)
+                      .setParameter("since", since)
+                      .getSingleResult();
+              return mine < autoPerDecision;
+            }));
   }
 
   public int dailyLimit() {

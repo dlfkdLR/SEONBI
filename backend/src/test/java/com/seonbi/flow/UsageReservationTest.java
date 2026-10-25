@@ -21,7 +21,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /** AI 사용량 기록과 한도 예약 (리뷰 R03·R17). 한도를 3으로 낮춰 실제 PostgreSQL에서 확인한다. */
-@TestPropertySource(properties = "AI_DAILY_QUOTA_PER_CLIENT=3")
+@TestPropertySource(properties = {"AI_DAILY_QUOTA_PER_CLIENT=3", "AI_AUTO_DAILY_PER_DECISION=2"})
 class UsageReservationTest extends FlowTestBase {
 
   @Autowired AiUsageService usage;
@@ -112,5 +112,26 @@ class UsageReservationTest extends FlowTestBase {
                         .getModel()
                         .length());
     assertThat(length).isEqualTo(50);
+  }
+
+  // 자동 AI 호출(문장 다듬기 등)은 결정별 일일 상한을 넘으면 더 부르지 않는다 (리뷰 O03)
+  @Test
+  void 자동_AI_호출은_결정별_상한이_있다() throws Exception {
+    Setup a = laptops();
+    Setup b = laptops();
+    UUID decision = UUID.fromString(a.id());
+    assertThat(usage.autoAllowed(decision)).isTrue();
+    for (int i = 0; i < 2; i++) {
+      usage
+          .recorder(UUID.randomUUID(), decision)
+          .accept(new LlmUsage("gemini", "m", 1, 1, 1, true, "explain_result"));
+    }
+    assertThat(usage.autoAllowed(decision)).isFalse();
+    assertThat(usage.autoAllowed(UUID.fromString(b.id()))).isTrue(); // 다른 결정은 영향 없음
+    // 사용자 직접 호출 기록은 자동 호출 상한에 세지 않는다
+    usage
+        .recorder(UUID.randomUUID(), UUID.fromString(b.id()))
+        .accept(new LlmUsage("gemini", "m", 1, 1, 1, true, "recommend_options"));
+    assertThat(usage.autoAllowed(UUID.fromString(b.id()))).isTrue();
   }
 }
