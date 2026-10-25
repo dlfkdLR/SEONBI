@@ -270,7 +270,8 @@ public class QuestionFlowService {
     // 실제 제공자가 없으면(fake) 질문 문장은 서버 템플릿 그대로 쓴다. fake 응답의 고정 문구가 모든 질문 제목을 덮어쓰지 않게 한다
     if (calls == null
         || r == null
-        || "fake".equals(r.settings().primaryFor(CallType.PHRASE_QUESTION).provider())) {
+        || "fake".equals(r.settings().primaryFor(CallType.PHRASE_QUESTION).provider())
+        || !usage.autoAllowed(decisionId)) { // 자동 호출 비용 상한(O03) {
       return null;
     }
     return spec -> calls.phraseQuestion(spec, usage.recorder(clientId, decisionId));
