@@ -625,7 +625,11 @@ public class ConfigurationService {
     Set<String> seen = new HashSet<>();
     if (r.items() != null)
       for (var x : r.items()) {
-        require(x != null && x.optionId() != null && x.criterionId() != null, "value");
+        require(
+            x != null
+                && x.optionId() != null
+                && x.criterionId() != null,
+            "value");
         require(seen.add(x.optionId() + "/" + x.criterionId()), "items");
         Option o = owned(Option.class, x.optionId(), d);
         Criterion c = owned(Criterion.class, x.criterionId(), d);

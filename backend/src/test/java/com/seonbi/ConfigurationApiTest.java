@@ -126,7 +126,8 @@ class ConfigurationApiTest extends FoundationTest {
   void decisionsAreSharedAcrossBrowsersIncludingEditsAndDeletes() throws Exception {
     String id = create(), base = "/api/v1/decisions/" + id;
     cid = UUID.randomUUID().toString();
-    assertThat(call(get("/api/v1/decisions"), null, 200).path("items").toString()).contains(id);
+    assertThat(call(get("/api/v1/decisions"), null, 200).path("items").toString())
+        .contains(id);
     call(patch(base), Map.of("title", "공유 수정"), 200);
     assertThat(call(get(base), null, 200).path("title").asText()).isEqualTo("공유 수정");
     call(delete(base), null, 204);
@@ -139,34 +140,22 @@ class ConfigurationApiTest extends FoundationTest {
     String a = option(base, "A"), b = option(base, "B");
     String score = criterion(base, "비용", "numeric", null);
     String rank = criterion(base, "흥미", "rating", "rank");
-    call(
-        put(base + "/values"),
-        Map.of(
-            "items",
-                List.of(
-                    Map.of("optionId", a, "criterionId", score, "value", 3),
-                    Map.of("optionId", b, "criterionId", score, "value", 5)),
-            "rankings",
-                List.of(Map.of("criterionId", rank, "order", List.of(List.of(a), List.of(b))))),
-        200);
-    var partial =
-        call(
-            put(base + "/values"),
-            Map.of("items", List.of(Map.of("optionId", b, "criterionId", score, "value", 4))),
-            200);
+    call(put(base + "/values"), Map.of(
+        "items", List.of(
+            Map.of("optionId", a, "criterionId", score, "value", 3),
+            Map.of("optionId", b, "criterionId", score, "value", 5)),
+        "rankings", List.of(Map.of("criterionId", rank, "order", List.of(List.of(a), List.of(b))))), 200);
+    var partial = call(put(base + "/values"), Map.of(
+        "items", List.of(Map.of("optionId", b, "criterionId", score, "value", 4))), 200);
     assertThat(partial.path("items").size()).isEqualTo(2);
     assertThat(partial.path("rankings").get(0).path("order").size()).isEqualTo(2);
     var clear = new HashMap<String, Object>();
     clear.put("optionId", a);
     clear.put("criterionId", score);
     clear.put("value", null);
-    var after =
-        call(
-            put(base + "/values"),
-            Map.of(
-                "items", List.of(clear),
-                "rankings", List.of(Map.of("criterionId", rank, "order", List.of()))),
-            200);
+    var after = call(put(base + "/values"), Map.of(
+        "items", List.of(clear),
+        "rankings", List.of(Map.of("criterionId", rank, "order", List.of()))), 200);
     assertThat(after.path("items").size()).isEqualTo(1);
     assertThat(after.path("items").get(0).path("optionId").asText()).isEqualTo(b);
     assertThat(after.path("rankings").get(0).path("order").size()).isZero();
