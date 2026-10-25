@@ -585,13 +585,17 @@ public class ConfigurationService {
    * 정밀한 값은 저장은 되는데 질문 시작에서 500이 나거나(무한대), 설정 API와 엔진의 필수 조건 판정이 달라진다.
    */
   static void requireSafeNumber(BigDecimal n, String field) {
+    boolean tiny =
+        n.signum() != 0 && n.abs().compareTo(new BigDecimal("1e-9")) < 0; // double로 바꾸면 0이 되거나 뭉개진다
     boolean ok =
-        n.abs().compareTo(new BigDecimal("1e15")) <= 0 && n.stripTrailingZeros().precision() <= 15;
+        !tiny
+            && n.abs().compareTo(new BigDecimal("1e15")) <= 0
+            && n.stripTrailingZeros().precision() <= 15;
     if (!ok) {
       throw new FlowError(
           HttpStatus.BAD_REQUEST,
           "VALIDATION_ERROR",
-          "숫자는 절댓값 1e15 이하, 유효숫자 15자리 이하여야 합니다.",
+          "숫자는 0이거나 절댓값 1e-9 이상 1e15 이하, 유효숫자 15자리 이하여야 합니다.",
           Map.of(field, "허용 범위를 벗어난 숫자입니다."));
     }
   }
@@ -668,6 +672,11 @@ public class ConfigurationService {
 
   public Map<String, Object> putValues(UUID id, UUID cid, Values r) {
     Decision d = edit(id, cid);
+    boolean noItems = r.items() == null || r.items().isEmpty();
+    boolean noRankings = r.rankings() == null || r.rankings().isEmpty();
+    if (noItems && noRankings) {
+      return values(d); // 바꿀 것이 없으면 버전을 올리지 않는다(분석 캐시를 헛되이 무효화하지 않게)
+    }
     Set<String> seen = new HashSet<>();
     if (r.items() != null)
       for (var x : r.items()) {

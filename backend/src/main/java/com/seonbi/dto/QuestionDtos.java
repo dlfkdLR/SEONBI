@@ -141,9 +141,13 @@ public final class QuestionDtos {
 
   /** 31번 POST /questions/start 200. round는 initial | extra. */
   public record StartQuestionsResponse(
-      String status, String round, QuestionObject question, StartProgress progress) {
+      String status, String round, QuestionObject question, StartProgress progress, String reason) {
     public StartQuestionsResponse {
-      require("QUESTIONING".equals(status), "status는 QUESTIONING입니다");
+      // 비교할 기준 쌍이 없으면 질문 없이 바로 ANALYZED(question=null, reason=NO_QUESTION_CANDIDATES)
+      require(
+          "QUESTIONING".equals(status) || "ANALYZED".equals(status),
+          "status는 QUESTIONING 또는 ANALYZED입니다");
+      require("ANALYZED".equals(status) || question != null, "QUESTIONING에는 question이 필요합니다");
       require("initial".equals(round) || "extra".equals(round), "round는 initial 또는 extra입니다");
     }
   }

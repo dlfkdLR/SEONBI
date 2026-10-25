@@ -464,6 +464,7 @@ public class QuestionFlowService {
       reason = NO_CANDIDATE_REASON;
     }
     ctx.decision.setStatus(DecisionStatus.ANALYZED.name());
+    ctx.decision.setUpdatedAt(Instant.now());
     return details("done", true, "reason", reason.name());
   }
 
@@ -514,7 +515,24 @@ public class QuestionFlowService {
     if (row.isEmpty()) {
       row = makeQuestion(ctx, fit(ctx.inp), phraser);
       if (row.isEmpty()) {
-        throw noCandidates(d);
+        if (extra) {
+          throw noCandidates(d);
+        }
+        // 값이 모두 같거나 비교할 기준이 하나뿐이면 물을 질문이 없다. 막지 않고 질문 없이 바로 결과(ANALYZED)로 보낸다
+        d.setQuestionLimit(null);
+        d.setStatus(DecisionStatus.ANALYZED.name());
+        d.setUpdatedAt(Instant.now());
+        return details(
+            "status",
+            "ANALYZED",
+            "round",
+            "initial",
+            "question",
+            null,
+            "reason",
+            "NO_QUESTION_CANDIDATES",
+            "progress",
+            details("answered", 0, "expectedRange", expectedRange(ctx)));
       }
       em.persist(row.get());
       ctx.data.questions().add(row.get());

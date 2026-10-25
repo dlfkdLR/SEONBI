@@ -552,7 +552,7 @@ export interface components {
             optionId: string;
             /** Format: uuid */
             criterionId: string;
-            value: components["schemas"]["com.fasterxml.jackson.databind.JsonNode"];
+            value?: components["schemas"]["com.fasterxml.jackson.databind.JsonNode"];
         };
         "com.seonbi.dto.Requests.Values": {
             items?: components["schemas"]["com.seonbi.dto.Requests.ValueItem"][];
@@ -697,6 +697,7 @@ export interface components {
             round?: string;
             question?: components["schemas"]["com.seonbi.dto.QuestionDtos.QuestionObject"];
             progress?: components["schemas"]["com.seonbi.dto.QuestionDtos.StartProgress"];
+            reason?: string;
         };
         "com.seonbi.dto.Requests.Count": {
             /** Format: int32 */
@@ -8656,7 +8657,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "text/markdown": string;
+                    "*/*": string;
                 };
             };
             /** @description 공통 오류 형식 */

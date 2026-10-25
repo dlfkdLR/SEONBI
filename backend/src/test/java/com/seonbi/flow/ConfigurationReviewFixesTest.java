@@ -42,12 +42,21 @@ class ConfigurationReviewFixesTest extends FlowTestBase {
     CountDownLatch go = new CountDownLatch(1);
     List<Future<?>> done = new ArrayList<>();
     for (int i = 0; i < threads; i++) {
+      int n = i;
       done.add(
           pool.submit(
               () -> {
                 go.await();
                 configuration.putValues(
-                    id, client, new com.seonbi.dto.Requests.Values(List.of(), List.of()));
+                    id,
+                    client,
+                    new com.seonbi.dto.Requests.Values(
+                        List.of(
+                            new com.seonbi.dto.Requests.ValueItem(
+                                UUID.fromString(s.options().get(0)),
+                                UUID.fromString(s.criteria().get(0)),
+                                com.fasterxml.jackson.databind.node.IntNode.valueOf(100 + n))),
+                        List.of()));
                 return null;
               }));
     }
@@ -227,5 +236,37 @@ class ConfigurationReviewFixesTest extends FlowTestBase {
       items.add(Map.of("kind", "required_tag", "label", "조건" + i, "satisfiedBy", List.of()));
     }
     call(put(s.base() + "/conditions"), Map.of("items", items), 400);
+  }
+
+  // double로 바꾸면 0이 되는 극소수 임계값은 저장하지 않는다 (설정 API와 엔진의 판정이 달라진다)
+  @Test
+  void 극소수는_저장하지_않는다() throws Exception {
+    Setup s = laptops();
+    call(
+        put(s.base() + "/conditions"),
+        Map.of(
+            "items",
+            List.of(
+                Map.of(
+                    "kind",
+                    "threshold",
+                    "criterionId",
+                    s.criteria().get(0),
+                    "operator",
+                    ">=",
+                    "value",
+                    new BigDecimal("1e-400")))),
+        400);
+  }
+
+  // 바꿀 것이 없는 저장은 버전을 올리지 않는다 (분석 캐시를 헛되이 무효화하지 않게)
+  @Test
+  void 빈_값_저장은_버전을_올리지_않는다() throws Exception {
+    Setup s = laptops();
+    UUID id = UUID.fromString(s.id());
+    int before = versionOf(id);
+    call(put(s.base() + "/values"), Map.of(), 200);
+    call(put(s.base() + "/values"), Map.of("items", List.of(), "rankings", List.of()), 200);
+    assertThat(versionOf(id)).isEqualTo(before);
   }
 }

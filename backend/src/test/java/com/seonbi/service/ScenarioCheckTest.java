@@ -76,4 +76,14 @@ class ScenarioCheckTest {
     assertThat(ScenarioCheck.consistent(expectations().get(0), "A안")).isFalse();
     assertThat(ScenarioCheck.consistent(expectations().get(0), "가격이 더 좋고 성능이 더 낮아요")).isFalse();
   }
+
+  // "좋지 않고"처럼 부정하면 글자는 맞아도 뜻이 뒤집히므로 받지 않는다
+  @Test
+  void negatedSentencesAreRejected() {
+    assertThat(
+            ScenarioCheck.consistent(expectations().get(0), "가격이 20만 원 더 좋지 않고, 성능이 1단계 더 낮지 않아요"))
+        .isFalse();
+    assertThat(ScenarioCheck.consistent(expectations().get(0), "가격이 20만 원 더 좋고, 성능이 1단계 더 낮아요"))
+        .isTrue();
+  }
 }

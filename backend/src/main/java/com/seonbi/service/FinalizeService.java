@@ -88,6 +88,7 @@ public class FinalizeService {
     row.setFinalizedAt(now);
     em.persist(row);
     d.setStatus(StateRules.afterFinalize(DecisionStatus.valueOf(d.getStatus())).name());
+    d.setUpdatedAt(now);
     return details(
         "decisionId", d.getId().toString(),
         "optionId", optionId.toString(),

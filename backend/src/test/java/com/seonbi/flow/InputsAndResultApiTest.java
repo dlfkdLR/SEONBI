@@ -168,4 +168,44 @@ class InputsAndResultApiTest extends FlowTestBase {
             .getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
     assertThat(finalBody).contains("## 최종 선택").contains("메모: 가벼워서");
   }
+
+  // AI 추출 규격은 선호의 기준을 ID로 준다. 이름과 ID 둘 다 받아야 확정할 수 있다
+  @Test
+  void 선호의_기준은_ID로_줘도_확정된다() throws Exception {
+    Setup s = laptops();
+    String id =
+        postJ(s.base() + "/inputs", Map.of("context", "reason", "text", "가격이 더 중요해요"), 201)
+            .path("id")
+            .asText();
+    JsonNode done =
+        postJ(
+            s.base() + "/inputs/" + id + "/confirm",
+            Map.of(
+                "items",
+                List.of(
+                    Map.of(
+                        "type",
+                        "preference",
+                        "criterionA",
+                        s.criteria().get(0),
+                        "criterionB",
+                        s.criteria().get(1),
+                        "value",
+                        3))),
+            200);
+    assertThat(done.path("created").path("answers").size()).isEqualTo(1);
+  }
+
+  @Test
+  void 최종_확정은_수정_시각을_갱신한다() throws Exception {
+    Setup s = laptops();
+    JsonNode analysis = analyzed(s);
+    String before = getJ(s.base(), 200).path("updatedAt").asText();
+    Thread.sleep(15);
+    postJ(
+        s.base() + "/final-choice",
+        Map.of("optionId", analysis.path("recommendation").path("optionId").asText()),
+        201);
+    assertThat(getJ(s.base(), 200).path("updatedAt").asText()).isNotEqualTo(before);
+  }
 }

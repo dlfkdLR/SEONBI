@@ -189,8 +189,9 @@ public class InputService {
     for (CRequests.ExtractedItem item : request.items()) {
       if (item instanceof CRequests.PreferenceItem p) {
         Map<String, UUID> byName = criterionIdsByName(d);
-        UUID a = byName.get(p.criterionA());
-        UUID b = byName.get(p.criterionB());
+        // AI 추출 규격은 기준 ID를, 사용자가 화면에서 고친 값은 이름을 줄 수 있어 둘 다 받는다
+        UUID a = resolveCriterion(byName, p.criterionA());
+        UUID b = resolveCriterion(byName, p.criterionB());
         if (a == null || b == null) {
           throw FlowErrors.notFound(
               "선호가 가리키는 기준을 찾을 수 없습니다.",
@@ -225,6 +226,22 @@ public class InputService {
       return Json.MAPPER.readValue(json, new TypeReference<Map<String, Object>>() {});
     } catch (JsonProcessingException e) {
       throw new IllegalStateException("추출 항목을 읽을 수 없습니다", e);
+    }
+  }
+
+  private static UUID resolveCriterion(Map<String, UUID> byName, String ref) {
+    if (ref == null) {
+      return null;
+    }
+    UUID byNameHit = byName.get(ref);
+    if (byNameHit != null) {
+      return byNameHit;
+    }
+    try {
+      UUID id = UUID.fromString(ref.trim());
+      return byName.containsValue(id) ? id : null;
+    } catch (IllegalArgumentException e) {
+      return null;
     }
   }
 

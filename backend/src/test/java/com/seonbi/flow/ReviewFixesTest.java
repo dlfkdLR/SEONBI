@@ -3,6 +3,7 @@ package com.seonbi.flow;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.seonbi.ai.Json;
 import com.seonbi.ai.LlmException;
 import com.seonbi.engine.Posterior;
@@ -70,5 +71,50 @@ class ReviewFixesTest extends FlowTestBase {
     assertThat(Posterior.particlesFromEnv("16")).isEqualTo(4000);
     assertThat(Posterior.particlesFromEnv("abc")).isEqualTo(4000);
     assertThat(Posterior.particlesFromEnv(null)).isEqualTo(4000);
+  }
+
+  // 값이 모두 같아 물을 질문이 없어도 막지 않고 질문 없이 바로 결과로 보낸다 (리뷰 R06)
+  @Test
+  void 물을_질문이_없으면_질문_없이_ANALYZED가_된다() throws Exception {
+    String id =
+        postJ(
+                "/api/v1/decisions",
+                Map.of(
+                    "title",
+                    "다 똑같은 선택",
+                    "category",
+                    "etc",
+                    "options",
+                    List.of(Map.of("name", "가"), Map.of("name", "나"), Map.of("name", "다"))),
+                201)
+            .path("id")
+            .asText();
+    String base = "/api/v1/decisions/" + id;
+    List<String> options = new java.util.ArrayList<>();
+    getJ(base + "/options", 200).path("items").forEach(o -> options.add(o.path("id").asText()));
+    List<Object> items = new java.util.ArrayList<>();
+    for (String name : List.of("하나", "둘", "셋")) {
+      String cr =
+          postJ(
+                  base + "/criteria",
+                  Map.of("name", name, "type", "numeric", "direction", "higher_better"),
+                  201)
+              .path("id")
+              .asText();
+      for (String o : options) {
+        items.add(Map.of("optionId", o, "criterionId", cr, "value", 5));
+      }
+    }
+    call(
+        org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(base + "/values"),
+        Map.of("items", items),
+        200);
+
+    JsonNode started = postJ(base + "/questions/start", null, 200);
+    assertThat(started.path("status").asText()).isEqualTo("ANALYZED");
+    assertThat(started.path("question").isNull()).isTrue();
+    assertThat(started.path("reason").asText()).isEqualTo("NO_QUESTION_CANDIDATES");
+    assertThat(getJ(base, 200).path("status").asText()).isEqualTo("ANALYZED");
+    assertThat(getJ(base + "/analysis", 200).path("rankings").size()).isEqualTo(3);
   }
 }

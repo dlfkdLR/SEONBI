@@ -75,7 +75,13 @@ final class ScenarioCheck {
     return true;
   }
 
+  // "좋지 않고"·"나쁘지 않음"처럼 부정하면 좋음/나쁨 글자가 있어도 뜻이 뒤집힌다. 부정을 풀이하지 않고 받지 않는 쪽으로 둔다
+  private static final List<String> NEGATION = List.of("않", "아니", "못", "없");
+
   private static boolean direction(Expect e, String segment) {
+    if (e.type() != Criterion.Type.BOOLEAN && NEGATION.stream().anyMatch(segment::contains)) {
+      return false;
+    }
     if (e.type() == Criterion.Type.BOOLEAN) {
       boolean has = segment.contains("있");
       boolean none = segment.contains("없");

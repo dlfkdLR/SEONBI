@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
@@ -25,6 +26,7 @@ const nextLabels = ['후보 적기', '비교할 항목 고르기', '후보 정�
 const hiddenRecommendations = new Set(['가격 합리성', '사용자 만족도 기대', '기기 신뢰성 및 위험 부담', '사용 효율성']);
 
 export default function SetupPage() {
+  const cache = useQueryClient();
   const owner = useOwner();
   const { id = '', step: stepParam = '1' } = useParams(), step = Number(stepParam);
   const { data: d, isPending, error, update, save, isSaving, dirty } = useDecision(id), navigate = useNavigate(), notify = useUI(s => s.notify);
@@ -116,7 +118,12 @@ export default function SetupPage() {
     const saved = await save(skip ? { ...d, conditions: [] } : undefined);
     if (!saved) { setErrors(['저장하지 못했어요. 입력 내용을 유지했으니 다시 시도해주세요.']); return; }
     if (!saved.readiness?.canStartQuestions) { setErrors(['아직 질문을 시작할 수 없어요. 후보와 비교 항목의 입력값을 확인해주세요.']); return; }
-    try { await api.request('startQuestions', { params: { decisionId: saved.id } }); navigate(`/decisions/${saved.id}/questions`); }
+    try {
+      const started = await api.request('startQuestions', { params: { decisionId: saved.id } }) as { status?: string };
+      await cache.invalidateQueries(); // 상태가 바뀌었으니 캐시된 결정·질문을 다시 읽게 한다
+      // 값이 모두 같아 물을 질문이 없으면 서버가 바로 ANALYZED로 보낸다 → 결과 화면으로
+      navigate(started.status === 'ANALYZED' ? `/decisions/${saved.id}/result` : `/decisions/${saved.id}/questions`);
+    }
     catch (e) { setErrors([e instanceof Error ? e.message : '질문을 시작하지 못했어요.']); }
   };
   const nextValue = async () => {
