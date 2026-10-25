@@ -1,19 +1,26 @@
 package com.seonbi.web;
 
 import com.seonbi.core.ClientId;
-import com.seonbi.core.FlowError;
 import com.seonbi.dto.CRequests;
 import com.seonbi.dto.CResponses;
+import com.seonbi.service.InputService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
-import java.util.Map;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+/** 자유 입력 28~30번. 처리는 {@link InputService}가 한다. */
 @RestController
 @RequestMapping("/api/v1/decisions/{decisionId}/inputs")
 public class InputController {
+
+  private final InputService inputs;
+
+  public InputController(InputService inputs) {
+    this.inputs = inputs;
+  }
+
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(operationId = "extractInput", summary = "자유 입력에서 조건과 선호 추출")
@@ -21,7 +28,7 @@ public class InputController {
       @ClientId UUID clientId,
       @PathVariable UUID decisionId,
       @Valid @RequestBody CRequests.ExtractInput request) {
-    throw stub("28");
+    return inputs.extract(decisionId, clientId, request);
   }
 
   @PostMapping("/{inputId}/confirm")
@@ -31,21 +38,13 @@ public class InputController {
       @PathVariable UUID decisionId,
       @PathVariable UUID inputId,
       @Valid @RequestBody CRequests.ConfirmInput request) {
-    throw stub("29");
+    return inputs.confirm(decisionId, clientId, inputId, request);
   }
 
   @PostMapping("/{inputId}/reject")
   @Operation(operationId = "rejectInput", summary = "자유 입력 추출 결과 거절")
   public CResponses.RejectInput reject(
       @ClientId UUID clientId, @PathVariable UUID decisionId, @PathVariable UUID inputId) {
-    throw stub("30");
-  }
-
-  private FlowError stub(String apiNumber) {
-    return new FlowError(
-        HttpStatus.NOT_IMPLEMENTED,
-        "NOT_IMPLEMENTED",
-        "API " + apiNumber + "은(는) A/B 서비스 및 DB 연동 전인 스텁입니다.",
-        Map.of("apiNumber", apiNumber, "stub", true));
+    return inputs.reject(decisionId, clientId, inputId);
   }
 }

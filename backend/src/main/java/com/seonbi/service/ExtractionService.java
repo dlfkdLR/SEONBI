@@ -28,7 +28,9 @@ import org.springframework.transaction.annotation.Transactional;
  * </ul>
  */
 @Service
-@Transactional
+@Transactional(
+    noRollbackFor =
+        FlowError.class) // 429·503·409는 상태를 바꾸지 않으므로 호출한 쪽이 기록(IRRELEVANT 등)을 남길 수 있게 한다
 public class ExtractionService {
 
   private final EntityManager em;
