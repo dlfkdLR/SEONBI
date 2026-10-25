@@ -83,6 +83,9 @@ class AnalysisApiTest extends FlowTestBase {
     assertThat(full.path("explanation").path("source").asText()).isEqualTo("template"); // 실제 제공자 없음
     assertThat(full.path("optionSummaries").size()).isEqualTo(3);
     assertThat(full.path("explanation").path("summary").asText()).contains("추천해요");
+    // 1위 확률이 무엇을 센 값인지 밝히는 근거 문장이 들어 있다
+    assertThat(full.path("explanation").path("caveats").toString())
+        .contains("1위 확률은 가능한 기준 중요도 조합 4,000개");
 
     // 40·41·44·45번은 39번 본문에서 꺼내므로 숫자가 같다
     assertThat((Object) getJ(s.base() + "/weights", 200).path("items"))

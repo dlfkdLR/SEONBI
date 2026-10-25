@@ -306,6 +306,39 @@ public class AnalysisService {
     return items;
   }
 
+  /**
+   * 1위 확률이 무엇을 센 값인지 밝히는 한 문장. 가능한 가중치 조합(입자) 중 답변에 맞는 쪽에서 추천 선택지가 1위인 비율이다. AI가 쓴 설명에도 같은 문장을 붙여서
+   * 어느 경로든 숫자의 근거가 보이게 한다.
+   */
+  private static String probabilityBasis(Ctx ctx, String name, double topProbability) {
+    int answered = AnalysisHelpers.answeredCount(ctx.inp.answers());
+    String share =
+        topProbability >= AnalysisHelpers.MAX_SHOWN_PROBABILITY
+            ? AnalysisHelpers.pct(topProbability) + "% 이상"
+            : AnalysisHelpers.pct(topProbability) + "%";
+    String evidence =
+        answered == 0 ? "아직 답변이 없어 기준을 똑같이 중요하게 본 상태에서" : "답변 " + answered + "개에 맞게 걸러낸";
+    return "1위 확률은 가능한 기준 중요도 조합 "
+        + String.format("%,d", Posterior.N_PARTICLES)
+        + "개를 "
+        + evidence
+        + " 뒤, 그중 "
+        + share
+        + "에서 "
+        + Korean.iGa(name)
+        + " 1위가 되는 비율이에요. 입력한 값이나 답변이 바뀌면 달라져요.";
+  }
+
+  @SuppressWarnings("unchecked")
+  private static List<String> withBasis(Ctx ctx, Map<String, Object> base, List<String> caveats) {
+    Map<String, Object> rec = (Map<String, Object>) base.get("recommendation");
+    List<String> out = new ArrayList<>(caveats);
+    out.add(
+        probabilityBasis(
+            ctx, (String) rec.get("name"), ((Number) rec.get("topProbability")).doubleValue()));
+    return out;
+  }
+
   @SuppressWarnings("unchecked")
   private static Map<String, Object> templateExplanation(Ctx ctx, Map<String, Object> base) {
     EngineInput inp = ctx.inp;
@@ -382,6 +415,7 @@ public class AnalysisService {
     if (!excluded.isEmpty()) {
       caveats.add("필수 조건을 만족하지 못해 " + String.join(", ", excluded) + "은(는) 비교에서 제외됐어요.");
     }
+    caveats.add(probabilityBasis(ctx, name, topProbability));
     return details(
         "summary", summaryText, "reasons", reasons, "caveats", caveats, "source", "template");
   }
@@ -558,7 +592,7 @@ public class AnalysisService {
           details(
               "summary", e.summary(),
               "reasons", List.copyOf(e.reasons()),
-              "caveats", List.copyOf(e.caveats()),
+              "caveats", withBasis(ctx, base, e.caveats()),
               "source", e.source()));
     }
     return texts;
