@@ -85,7 +85,7 @@ class AnalysisAiPhaseTest extends FlowTestBase {
     postJ(s.base() + "/questions/start", null, 200);
     postJ(s.base() + "/questions/stop", null, 200);
 
-    // 질문 시작의 문장 다듬기는 질문 행을 만드는 같은 트랜잭션 안에서 한다. 여기서는 분석 조회만 본다
+    // 질문 시작에서 한 문장 다듬기 호출은 빼고 분석 조회만 본다
     TX_ACTIVE_DURING_CALL.clear();
     CALLS.clear();
     JsonNode first = getJ(s.base() + "/analysis", 200);
@@ -100,5 +100,42 @@ class AnalysisAiPhaseTest extends FlowTestBase {
     getJ(s.base() + "/analysis", 200);
     assertThat(CALLS).hasSize(calls);
     assertThat(CallType.EXPLAIN_RESULT).isNotNull();
+  }
+
+  // 질문 문장 다듬기도 트랜잭션 밖에서 하고, 다듬은 문장은 저장돼 다시 조회해도 같다
+  @Test
+  void 질문_문장_다듬기는_트랜잭션_밖에서_하고_저장한다() throws Exception {
+    TX_ACTIVE_DURING_CALL.clear();
+    CALLS.clear();
+    Setup s = laptops();
+
+    JsonNode started = postJ(s.base() + "/questions/start", null, 200);
+
+    assertThat(CALLS).contains("PhraseQuestionOutput");
+    assertThat(TX_ACTIVE_DURING_CALL).isNotEmpty().containsOnly(false);
+    String title = started.path("question").path("title").asText();
+    assertThat(title).isEqualTo("두 가지 중 어느 쪽이 더 마음에 드세요?"); // 가짜 AI의 고정 문구가 반영됨
+    // 새로고침해도 같은 문장 (저장됨), AI를 다시 부르지 않는다
+    int calls = CALLS.size();
+    JsonNode again = getJ(s.base() + "/questions/next", 200);
+    assertThat(again.path("question").path("title").asText()).isEqualTo(title);
+    assertThat(CALLS).hasSize(calls);
+
+    // 답변하면 다음 질문도 같은 방식으로 다듬는다
+    CALLS.clear();
+    TX_ACTIVE_DURING_CALL.clear();
+    JsonNode answered =
+        postJ(
+            s.base() + "/answers",
+            Map.of(
+                "questionId",
+                started.path("question").path("id").asText(),
+                "response",
+                Map.of("value", 2)),
+            201);
+    if (!answered.path("next").path("done").asBoolean()) {
+      assertThat(CALLS).contains("PhraseQuestionOutput");
+      assertThat(TX_ACTIVE_DURING_CALL).containsOnly(false);
+    }
   }
 }

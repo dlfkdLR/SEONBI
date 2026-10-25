@@ -3,11 +3,8 @@ package com.seonbi.service;
 import static com.seonbi.service.FlowErrors.details;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.seonbi.ai.CallType;
 import com.seonbi.ai.Json;
-import com.seonbi.ai.LlmCalls;
 import com.seonbi.ai.LlmCalls.PhrasedQuestion;
-import com.seonbi.ai.LlmRouter;
 import com.seonbi.core.FlowError;
 import com.seonbi.domain.Decision;
 import com.seonbi.domain.EstimateSnapshot;
@@ -35,7 +32,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -86,25 +82,16 @@ public class QuestionFlowService {
   private final DecisionResolver resolver;
   private final EngineBridge bridge;
   private final ConfigurationService configuration;
-  private final AiUsageService usage;
-  private final ObjectProvider<LlmCalls> llm;
-  private final ObjectProvider<LlmRouter> router;
 
   public QuestionFlowService(
       EntityManager em,
       DecisionResolver resolver,
       EngineBridge bridge,
-      ConfigurationService configuration,
-      AiUsageService usage,
-      ObjectProvider<LlmCalls> llm,
-      ObjectProvider<LlmRouter> router) {
+      ConfigurationService configuration) {
     this.em = em;
     this.resolver = resolver;
     this.bridge = bridge;
     this.configuration = configuration;
-    this.usage = usage;
-    this.llm = llm;
-    this.router = router;
   }
 
   // ── 공통 ──────────────────────────────────────────────────────
@@ -204,7 +191,7 @@ public class QuestionFlowService {
     return new Stop(d.stop(), d.reason(), eig);
   }
 
-  private static Map<String, Object> questionObject(Question q) {
+  static Map<String, Object> questionObject(Question q) {
     Map<String, Object> out = new LinkedHashMap<>();
     out.put("id", q.getId().toString());
     out.put("seq", q.getSeq());
@@ -259,29 +246,15 @@ public class QuestionFlowService {
 
   // ── 질문 만들기 ───────────────────────────────────────────────
 
-  private static Map<String, Object> deepCopy(Map<String, Object> m) {
+  static Map<String, Object> deepCopy(Map<String, Object> m) {
     return Json.MAPPER.convertValue(m, new TypeReference<LinkedHashMap<String, Object>>() {});
   }
 
-  private Function<Map<String, Object>, Optional<PhrasedQuestion>> phraser(
-      UUID clientId, UUID decisionId) {
-    LlmCalls calls = llm.getIfAvailable();
-    LlmRouter r = router.getIfAvailable();
-    // 실제 제공자가 없으면(fake) 질문 문장은 서버 템플릿 그대로 쓴다. fake 응답의 고정 문구가 모든 질문 제목을 덮어쓰지 않게 한다
-    if (calls == null
-        || r == null
-        || "fake".equals(r.settings().primaryFor(CallType.PHRASE_QUESTION).provider())
-        || !usage.autoAllowed(decisionId)) { // 자동 호출 비용 상한(O03) {
-      return null;
-    }
-    return spec -> calls.phraseQuestion(spec, usage.recorder(clientId, decisionId));
-  }
-
-  private record Phrased(Map<String, Object> display, String source) {}
+  record Phrased(Map<String, Object> display, String source) {}
 
   /** AI 문장을 덮어쓴다 (6.2: title, optionA/B.description, left/right.label만). 실패·없으면 템플릿. */
   @SuppressWarnings("unchecked")
-  private static Phrased phrase(
+  static Phrased phrase(
       Map<String, Object> obj,
       Map<String, Object> display,
       List<List<ScenarioCheck.Expect>> expected, // 상황형이면 서버가 정한 기준별 방향·크기, 아니면 null
@@ -398,9 +371,20 @@ public class QuestionFlowService {
     return false;
   }
 
+  /** 상황형 질문이면 서버가 정한 기준별 방향·크기(AI 문장 검증용). 아니면 null. 호출하는 쪽 트랜잭션 안에서 부른다. */
+  List<List<ScenarioCheck.Expect>> expectationsFor(Decision d, Question q) {
+    if (!"ab_scenario".equals(q.getType())) {
+      return null;
+    }
+    Ctx ctx = read(d);
+    QuestionSpec spec = EngineBridge.specFromMap(q.getSpec(), ctx.inp.criterionIds());
+    return spec instanceof com.seonbi.engine.QuestionSpec.ScenarioSpec sc
+        ? ScenarioCheck.expectations(sc, ctx.inp.metas())
+        : null;
+  }
+
   /** 엔진이 다음 질문을 골라 행으로 만든다(저장은 호출하는 쪽). 낼 질문이 없으면 비어 있다. */
-  private Optional<Question> makeQuestion(
-      Ctx ctx, Posterior post, Function<Map<String, Object>, Optional<PhrasedQuestion>> phraser) {
+  private Optional<Question> makeQuestion(Ctx ctx, Posterior post) {
     EngineInput inp = ctx.inp;
     Optional<QuestionSpec> next =
         QuestionSelector.nextQuestion(
@@ -424,15 +408,9 @@ public class QuestionFlowService {
             inp.scales(),
             inp.category(),
             QuestionText.readableRanges(inp.metas()));
-    Map<String, Object> forAi = new LinkedHashMap<>();
-    forAi.put("id", q.getId().toString());
-    forAi.put("seq", seq);
-    forAi.putAll(display);
-    List<List<ScenarioCheck.Expect>> expected =
-        spec instanceof com.seonbi.engine.QuestionSpec.ScenarioSpec sc
-            ? ScenarioCheck.expectations(sc, inp.metas())
-            : null;
-    Phrased phrased = phrase(forAi, display, expected, phraser);
+    // 문장 다듬기(AI)는 DB 트랜잭션 안에서 하지 않는다. 여기서는 서버 템플릿 문장으로 저장하고,
+    // 트랜잭션이 끝난 뒤 QuestionPhrasing이 AI 문장으로 바꿔 둔다
+    Phrased phrased = new Phrased(display, "template");
     q.setDecision(ctx.decision);
     q.setSeq(seq);
     q.setType(EngineBridge.questionTypeOf(spec));
@@ -445,8 +423,7 @@ public class QuestionFlowService {
   }
 
   /** QUESTIONING에서 32번·37번 next: 미답변 질문 → 종료 판단 → 새 질문. 종료면 ANALYZED로 바꾼다. */
-  private Map<String, Object> nextPayload(
-      Ctx ctx, Function<Map<String, Object>, Optional<PhrasedQuestion>> phraser) {
+  private Map<String, Object> nextPayload(Ctx ctx) {
     Optional<Question> pending = unanswered(ctx);
     if (pending.isPresent()) {
       repairScenarioText(ctx, pending.get());
@@ -456,7 +433,7 @@ public class QuestionFlowService {
     Stop stop = stopDecision(ctx, post);
     StopReason reason = stop.reason();
     if (!stop.stop()) {
-      Optional<Question> row = makeQuestion(ctx, post, phraser);
+      Optional<Question> row = makeQuestion(ctx, post);
       if (row.isPresent()) {
         em.persist(row.get());
         ctx.data.questions().add(row.get());
@@ -476,8 +453,6 @@ public class QuestionFlowService {
     Decision d = writable(decisionId, clientId);
     DecisionStatus status = statusOf(d);
     check(Action.QUESTION_START, d);
-    Function<Map<String, Object>, Optional<PhrasedQuestion>> phraser =
-        phraser(clientId, decisionId);
 
     @SuppressWarnings("unchecked")
     List<String> missing =
@@ -493,7 +468,7 @@ public class QuestionFlowService {
       boolean extra = d.getQuestionLimit() != null;
       Optional<Question> row = unanswered(ctx);
       if (row.isEmpty()) {
-        row = makeQuestion(ctx, fit(ctx.inp), phraser);
+        row = makeQuestion(ctx, fit(ctx.inp));
         if (row.isEmpty()) {
           throw noCandidates(d);
         }
@@ -514,7 +489,7 @@ public class QuestionFlowService {
     Integer limit = extra ? Stopping.extraRoundLimit(ctx.answered()) : null;
     Optional<Question> row = unanswered(ctx);
     if (row.isEmpty()) {
-      row = makeQuestion(ctx, fit(ctx.inp), phraser);
+      row = makeQuestion(ctx, fit(ctx.inp));
       if (row.isEmpty()) {
         if (extra) {
           throw noCandidates(d);
@@ -571,7 +546,7 @@ public class QuestionFlowService {
       return details("done", true, "reason", finalReason(read(d)).name());
     }
     Ctx ctx = readFrozen(d, true);
-    return nextPayload(ctx, phraser(clientId, decisionId));
+    return nextPayload(ctx);
   }
 
   // ── 33 · 34 · 35 · 36 ─────────────────────────────────────────
@@ -723,7 +698,7 @@ public class QuestionFlowService {
     Map<String, Object> estimate =
         AnalysisHelpers.estimatePayload(s, ctx.inp.v(), ctx.inp.criterionIds());
     recordSnapshot(d, ctx, s);
-    Map<String, Object> next = nextPayload(ctx, phraser(clientId, decisionId));
+    Map<String, Object> next = nextPayload(ctx);
     return details("answer", answerObject(row), "estimate", estimate, "next", next);
   }
 
