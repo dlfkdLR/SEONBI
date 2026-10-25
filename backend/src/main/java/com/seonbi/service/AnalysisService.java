@@ -313,8 +313,11 @@ public class AnalysisService {
     int top = inp.optionIds().indexOf((String) rec.get("optionId"));
     String name = (String) rec.get("name");
     double topProbability = ((Number) rec.get("topProbability")).doubleValue();
-    String summaryText =
-        Korean.euRo(name) + " 추천해요. 1위일 확률은 " + AnalysisHelpers.pct(topProbability) + "%예요.";
+    String shownPct =
+        topProbability >= AnalysisHelpers.MAX_SHOWN_PROBABILITY
+            ? AnalysisHelpers.pct(topProbability) + "% 이상"
+            : AnalysisHelpers.pct(topProbability) + "%";
+    String summaryText = Korean.euRo(name) + " 추천해요. 1위일 확률은 " + shownPct + "예요.";
     Map<String, Double> means = new HashMap<>();
     for (Map<String, Object> w : (List<Map<String, Object>>) base.get("weights")) {
       means.put((String) w.get("criterionId"), ((Number) w.get("mean")).doubleValue());
@@ -340,6 +343,14 @@ public class AnalysisService {
                 + Korean.iGa(name)
                 + " 유리해서 점수에 크게 기여했어요.");
       }
+    }
+    if (AnalysisHelpers.dominatesAll(inp.v(), top)) {
+      // 모든 기준에서 앞서면 중요도를 어떻게 정해도 1위가 바뀌지 않는다
+      while (reasons.size() >= MAX_BULLETS) {
+        reasons.remove(reasons.size() - 1);
+      }
+      reasons.add(
+          0, "모든 비교 기준에서 " + Korean.iGa(name) + " 다른 선택지와 같거나 더 좋아서, 중요도를 어떻게 정해도 1위가 바뀌지 않아요.");
     }
     if (reasons.isEmpty() && !contribs.isEmpty()) {
       reasons.add(
@@ -427,7 +438,7 @@ public class AnalysisService {
         details(
             "optionId", inp.optionIds().get(top),
             "name", inp.optionNames().get(top),
-            "topProbability", AnalysisHelpers.p(topP)));
+            "topProbability", AnalysisHelpers.p(AnalysisHelpers.shown(topP))));
     out.put(
         "rankings",
         AnalysisHelpers.rankingsItems(

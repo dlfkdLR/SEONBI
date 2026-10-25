@@ -38,8 +38,7 @@ public final class Requests {
       BigDecimal scaleMax,
       String source) {}
 
-  public record ValueItem(
-      @NotNull UUID optionId, @NotNull UUID criterionId, JsonNode value) {}
+  public record ValueItem(@NotNull UUID optionId, @NotNull UUID criterionId, JsonNode value) {}
 
   public record Ranking(UUID criterionId, List<List<UUID>> order) {}
 

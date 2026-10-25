@@ -67,6 +67,40 @@ public final class AnalysisHelpers {
     return List.of(answered + 1, questionLimit);
   }
 
+  /**
+   * 화면에 보여 주는 1위 확률의 상한. 입자 4,000개로 어림한 값이 100%여도 "반례를 4,000번 안에 못 찾았다"는 뜻일 뿐 완전히 확실하다는 뜻이 아니므로
+   * 99%까지만 보여 준다(모든 기준에서 앞서는 경우는 설명 문장으로 따로 알려 준다). 낮은 확신 판정(lowConfidence)과 저장되는 값은 원래 값을 쓴다.
+   */
+  public static final double MAX_SHOWN_PROBABILITY = 0.99;
+
+  public static double shown(double probability) {
+    return Math.min(probability, MAX_SHOWN_PROBABILITY);
+  }
+
+  /** 추천 선택지가 모든 기준에서 다른 선택지와 같거나 더 좋고 하나 이상은 더 좋은가 (가중치와 상관없이 1위가 확정). */
+  public static boolean dominatesAll(double[][] v, int top) {
+    boolean strictlyBetterThanAll = v.length > 1;
+    for (int i = 0; i < v.length; i++) {
+      if (i == top) {
+        continue;
+      }
+      boolean atLeast = true;
+      boolean better = false;
+      for (int k = 0; k < v[top].length; k++) {
+        if (v[top][k] < v[i][k] - 1e-12) {
+          atLeast = false;
+        }
+        if (v[top][k] > v[i][k] + 1e-12) {
+          better = true;
+        }
+      }
+      if (!atLeast || !better) {
+        strictlyBetterThanAll = false;
+      }
+    }
+    return strictlyBetterThanAll;
+  }
+
   /** 35번·39번 lowConfidence — 같은 값을 쓰도록 이 함수 하나만 거친다 (P_best &lt; 0.55). */
   public static boolean lowConfidence(double pBestTop) {
     return Stopping.isLowConfidence(pBestTop);
@@ -90,7 +124,7 @@ public final class AnalysisHelpers {
               "mean", p(s.mean()[k]),
               "interval", List.of(p(s.intervals()[k][0]), p(s.intervals()[k][1]))));
     }
-    return obj("weights", weights, "topProbability", p(topProbability(s, v)));
+    return obj("weights", weights, "topProbability", p(shown(topProbability(s, v))));
   }
 
   // ── 40번 · 41번 ────────────────────────────────────────────────
@@ -171,7 +205,7 @@ public final class AnalysisHelpers {
               "optionId", optionIds.get(i),
               "name", optionNames.get(i),
               "score", p(u[i]),
-              "topProbability", p(pBest[i])));
+              "topProbability", p(shown(pBest[i]))));
     }
     return out;
   }

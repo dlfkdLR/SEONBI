@@ -568,11 +568,16 @@ public class QuestionFlowService {
         reason == null ? null : reason.name(),
         "metrics",
         details(
-            "answered", ctx.answered(),
-            "topOption", inp.optionIds().get(top),
-            "topProbability", AnalysisHelpers.p(AnalysisHelpers.topProbability(s, inp.v())),
-            "decisionEntropy", AnalysisHelpers.p(s.entropy()),
-            "bestNextInfoGain", round(stop.eig(), EIG_DIGITS)),
+            "answered",
+            ctx.answered(),
+            "topOption",
+            inp.optionIds().get(top),
+            "topProbability",
+            AnalysisHelpers.p(AnalysisHelpers.shown(AnalysisHelpers.topProbability(s, inp.v()))),
+            "decisionEntropy",
+            AnalysisHelpers.p(s.entropy()),
+            "bestNextInfoGain",
+            round(stop.eig(), EIG_DIGITS)),
         "remainingUncertainty",
         remaining);
   }
@@ -589,9 +594,12 @@ public class QuestionFlowService {
     Ctx ctx = read(d);
     Posterior.Summary s = fit(ctx.inp).summary(ctx.inp.v());
     return details(
-        "answered", ctx.answered(),
-        "expectedRange", expectedRange(ctx),
-        "confidence", AnalysisHelpers.p(AnalysisHelpers.topProbability(s, ctx.inp.v())));
+        "answered",
+        ctx.answered(),
+        "expectedRange",
+        expectedRange(ctx),
+        "confidence",
+        AnalysisHelpers.p(AnalysisHelpers.shown(AnalysisHelpers.topProbability(s, ctx.inp.v()))));
   }
 
   /** 35번 POST /questions/stop. QUESTIONING에서만, ANALYZED로 바꾼다. */
