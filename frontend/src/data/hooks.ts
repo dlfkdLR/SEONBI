@@ -3,15 +3,15 @@ import { notifyManager, QueryClient, useInfiniteQuery, useQuery, useQueryClient 
 import type { Decision } from '../domain/types';
 import { repository, rebaseDraft } from './repository';
 import { getClientId } from '../api/clientId';
-import { blankDecision } from './examples';
+import { readNewDecisionDraft, retainNewDecisionDraft, clearNewDecisionDraft } from './new-decision-draft';
 import { useUI } from '../lib/state';
 
 notifyManager.setScheduler(queueMicrotask);
-export const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, retry: false, refetchOnWindowFocus: false }, mutations: { retry: false } } });
+export const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, retry: false, refetchOnWindowFocus: true }, mutations: { retry: false } } });
 export const useOwner = () => getClientId();
 export function useDecisions() {
   const owner = useOwner();
-  return useInfiniteQuery({ queryKey: ['decisions', owner], initialPageParam: undefined as string | undefined,
+  return useInfiniteQuery({ queryKey: ['decisions', owner], refetchInterval: 30_000, initialPageParam: undefined as string | undefined,
     queryFn: ({ pageParam }) => repository.list(pageParam), getNextPageParam: last => last.nextCursor ?? undefined });
 }
 export function useDecision(id: string) {
@@ -19,7 +19,7 @@ export function useDecision(id: string) {
   const [draft, setDraft] = useState<Decision>(), [isSaving, setSaving] = useState(false);
   const saving = useRef(false);
   const query = useQuery({ queryKey: ['decision', owner, id], queryFn: () => repository.get(id), enabled: id !== 'new' });
-  const [blank] = useState(() => ({ ...blankDecision(owner), id: 'new' }));
+  const [blank] = useState(() => readNewDecisionDraft(owner));
   useEffect(() => { setDraft(undefined); }, [id]);
   const data = draft ?? query.data ?? (id === 'new' ? blank : undefined);
   const update = (updater: (d: Decision) => void): boolean => {
@@ -29,15 +29,18 @@ export function useDecision(id: string) {
   };
   useEffect(() => {
     if (!draft) return;
+    // A retained new form survives refresh; existing server edits still warn.
+    if (id === 'new' && retainNewDecisionDraft(owner, draft)) return;
     const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); };
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
-  }, [draft]);
-  const save = async (): Promise<Decision | null> => {
+  }, [draft, id, owner]);
+  const save = async (override?: Decision): Promise<Decision | null> => {
     if (!data || saving.current) return null;
     saving.current = true; setSaving(true);
     try {
-      const saved = await repository.save(query.data, data);
+      const saved = await repository.save(query.data, override ?? data);
+      if (id === 'new') clearNewDecisionDraft(owner);
       cache.setQueryData(['decision', owner, saved.id], saved); setDraft(undefined);
       await cache.invalidateQueries({ queryKey: ['decisions', owner] });
       return saved;

@@ -7,6 +7,7 @@ import './styles.css';
 import { queryClient } from './data/hooks';
 import { Layout } from './components/layout';
 import HistoryPage from './pages/history';
+import HomePage from './pages/home';
 import { Button, PageHeading } from './components/ui';
 const ExamplePage = lazy(() => import('./pages/example'));
 const SetupPage = lazy(() => import('./pages/setup'));
@@ -28,13 +29,14 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { fai
 }
 function App() {
   return <ErrorBoundary><QueryClientProvider client={queryClient}><BrowserRouter><Suspense fallback={<main className="page"><p role="status" className="muted">화면을 준비하고 있어요.</p></main>}><Routes><Route element={<Layout />}>
-    <Route index element={<HistoryPage />} />
+    <Route index element={<HomePage />} />
+    <Route path="decisions" element={<HistoryPage />} />
     <Route path="example" element={<ExamplePage />} />
     <Route path="decisions/:id/setup/:step" element={<SetupPage />} />
     <Route path="decisions/:id/questions" element={<QuestionsPage />} />
     <Route path="decisions/:id/result" element={<ResultPage />} />
     <Route path="decisions/:id/simulate" element={<SimulationPage />} />
-    <Route path="*" element={<main id="main" className="page"><PageHeading title="페이지를 찾을 수 없어요." /><Link to="/">내 결정으로 돌아가기</Link></main>} />
+    <Route path="*" element={<main id="main" className="page"><PageHeading title="페이지를 찾을 수 없어요." /><Link to="/">공유 결정으로 돌아가기</Link></main>} />
   </Route></Routes></Suspense></BrowserRouter></QueryClientProvider></ErrorBoundary>;
 }
 ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><App /></React.StrictMode>);

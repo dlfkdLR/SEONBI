@@ -14,7 +14,7 @@ export type CriterionDto = Omit<Schema<'com.seonbi.dto.Responses.Criterion'>, 't
 export type CreateDecision = Schema<'com.seonbi.dto.Requests.CreateDecision'>;
 export type ValueItem = { optionId: string; criterionId: string; value: number | boolean };
 export type RankingInput = { criterionId: string; order: string[][] };
-export type ValuesRequest = Omit<Schema<'com.seonbi.dto.Requests.Values'>, 'items' | 'rankings'> & { items: ValueItem[]; rankings: RankingInput[] };
+export type ValuesRequest = Omit<Schema<'com.seonbi.dto.Requests.Values'>, 'items' | 'rankings'> & { items: (ValueItem | { optionId: string; criterionId: string; value: null })[]; rankings: RankingInput[] };
 export type DecisionDto = Omit<Schema<'com.seonbi.dto.Responses.Decision'>, 'options' | 'criteria' | 'values' | 'rankings' | 'status' | 'category'> & {
   id: string; title: string; status: Status; category: Category;
   options: OptionDto[]; criteria: CriterionDto[]; values: ValueItem[]; rankings: RankingInput[];

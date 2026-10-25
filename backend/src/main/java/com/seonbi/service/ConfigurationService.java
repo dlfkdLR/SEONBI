@@ -144,11 +144,11 @@ public class ConfigurationService {
         require(false, "cursor");
       }
     String q =
-        "select d from Decision d where d.clientId=:cid and d.deletedAt is null"
+        "select d from Decision d where d.deletedAt is null"
             + (status == null ? "" : " and d.status=:status")
             + (time == null ? "" : " and (d.updatedAt<:time or (d.updatedAt=:time and d.id<:last))")
             + " order by d.updatedAt desc,d.id desc";
-    var query = em.createQuery(q, Decision.class).setParameter("cid", cid).setMaxResults(limit + 1);
+    var query = em.createQuery(q, Decision.class).setMaxResults(limit + 1);
     if (status != null) query.setParameter("status", status);
     if (time != null) {
       query.setParameter("time", time);
@@ -628,14 +628,20 @@ public class ConfigurationService {
         require(
             x != null
                 && x.optionId() != null
-                && x.criterionId() != null
-                && x.value() != null
-                && !x.value().isNull(),
+                && x.criterionId() != null,
             "value");
         require(seen.add(x.optionId() + "/" + x.criterionId()), "items");
         Option o = owned(Option.class, x.optionId(), d);
         Criterion c = owned(Criterion.class, x.criterionId(), d);
         require(!"rank".equals(c.getInputMode()), "inputMode");
+        if (x.value() == null || x.value().isNull()) {
+          OptionValue.Key key = new OptionValue.Key();
+          key.option = o.getId();
+          key.criterion = c.getId();
+          OptionValue existing = em.find(OptionValue.class, key);
+          if (existing != null) em.remove(existing);
+          continue;
+        }
         OptionValue v = value(o, c);
         if ("boolean".equals(c.getType())) {
           require(x.value().isBoolean(), "value");
@@ -666,6 +672,11 @@ public class ConfigurationService {
             "rankings");
         Criterion c = owned(Criterion.class, x.criterionId(), d);
         require("rank".equals(c.getInputMode()), "inputMode");
+        if (x.order().isEmpty()) {
+          for (OptionValue v : valueRows(d))
+            if (v.getCriterion().getId().equals(c.getId())) em.remove(v);
+          continue;
+        }
         List<UUID> flat = new ArrayList<>();
         for (var group : x.order()) {
           require(group != null && !group.isEmpty(), "rankings");

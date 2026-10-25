@@ -105,7 +105,19 @@ export const repository = {
       } else if (!equal(criterionBody(old), criterionBody(c))) await api.request('updateCriterion', { params: { ...params, criterionId: c.id }, body: criterionBody(c) });
     }
     const values = valuesBody(draft, ids);
-    if (!equal(values, valuesBody(base)) && (values.items.length || values.rankings.length)) await api.request('saveValues', { params, body: values as never });
+    const before = valuesBody(base);
+    if (!equal(values, before)) {
+      const optionIds = new Set(draft.options.map(o => ids.get(o.id) ?? o.id));
+      const criterionIds = new Set(draft.criteria.map(c => ids.get(c.id) ?? c.id));
+      const present = new Set(values.items.map(v => `${v.optionId}/${v.criterionId}`));
+      for (const old of before.items) if (optionIds.has(old.optionId) && criterionIds.has(old.criterionId)
+        && !present.has(`${old.optionId}/${old.criterionId}`))
+        values.items.push({ optionId: old.optionId, criterionId: old.criterionId, value: null });
+      const ranked = new Set(values.rankings.map(r => r.criterionId));
+      for (const old of before.rankings) if (criterionIds.has(old.criterionId) && !ranked.has(old.criterionId))
+        values.rankings.push({ criterionId: old.criterionId, order: [] });
+      await api.request('saveValues', { params, body: values as never });
+    }
     const conditions = (d: Decision, map = new Map<string, string>()) => d.conditions.map(c => c.kind === 'required_tag'
       ? { kind: c.kind, label: c.label, satisfiedBy: c.satisfiedBy.map(id => map.get(id) ?? id) }
       : { kind: c.kind, criterionId: map.get(c.criterionId) ?? c.criterionId, operator: c.operator, value: c.value });

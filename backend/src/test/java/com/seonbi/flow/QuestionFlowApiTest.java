@@ -157,10 +157,10 @@ class QuestionFlowApiTest extends FlowTestBase {
         .isEqualTo("NOT_READY");
     // 답변·조기 종료는 DRAFT에서 409 INVALID_STATE
     postJ(base + "/questions/stop", null, 409);
-    // 남의 결정은 404
+    // 브라우저가 달라도 같은 결정의 상태를 볼 수 있다.
     String other = cid;
     cid = UUID.randomUUID().toString();
-    getJ(base + "/questions/next", 404);
+    getJ(base + "/questions/next", 422);
     cid = other;
   }
 

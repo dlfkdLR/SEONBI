@@ -1,10 +1,11 @@
 import { expect, test } from '@playwright/test';
 import { mockApi } from './test-api';
 
-for (const label of ['결정 제목', '어디에, 어떻게 사용할 예정인가요?', '선택지 1']) {
+for (const label of ['고민 제목', '어디에 사용할 건가요? · 선택', '후보 1']) {
   test(`${label}: 실제 브라우저 IME 조합 중 값을 덮어쓰지 않고 완성한 한글을 저장한다`, async ({ page, context }) => {
     await mockApi(page);
     await page.goto('/decisions/new/setup/1');
+    if (label === '후보 1') { await page.getByLabel('고민 제목').fill('새 고민'); await page.getByRole('button', { name: '후보 적기', exact: true }).click(); }
     const input = page.getByRole('textbox', { name: label, exact: true });
     await input.focus();
     // CDP creates a real Chromium composition session. Track JS value assignments:
@@ -33,9 +34,15 @@ for (const label of ['결정 제목', '어디에, 어떻게 사용할 예정인�
     await cdp.send('Input.insertText', { text: '글' });
     await expect(input).toHaveValue('한글');
     await input.press('Tab');
-    for (const [name,value] of [['결정 제목','다른 제목'],['선택지 1','개발'],['선택지 2','사진']]) if (name !== label) await page.getByRole('textbox',{name,exact:true}).fill(value);
-    await page.getByRole('button',{name:'변경사항 저장',exact:true}).click();
+    if (label !== '후보 1') {
+      if (label !== '고민 제목') await page.getByLabel('고민 제목').fill('다른 제목');
+      await page.getByRole('button', { name: '후보 적기', exact: true }).click();
+    }
+    if (label !== '후보 1') await page.getByLabel('후보 1', {exact:true}).fill('개발');
+    await page.getByLabel('후보 2', {exact:true}).fill('사진');
+    await page.getByRole('button', {name:'비교할 항목 고르기',exact:true}).click();
     await expect(page).toHaveURL(/server-decision-1/);
+    await page.goto('/decisions/server-decision-1/setup/' + (label === '후보 1' ? '2' : '1'));
     await page.reload();
     await expect(page.getByRole('textbox', { name: label, exact: true })).toHaveValue('한글');
   });
