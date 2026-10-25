@@ -87,9 +87,11 @@ public class ConfigurationService {
     return row;
   }
 
+  /** 결정당 필수 조건 상한. 제외 판정이 선택지 × 조건 수만큼 조회하므로 무한히 늘리지 않는다. */
+  static final int MAX_CONDITIONS = 50;
+
   private Decision edit(UUID id, UUID cid) {
-    Decision d = resolver.get(id, cid);
-    em.lock(d, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+    Decision d = resolver.getForUpdate(id, cid);
     resolver.ensureNotFinalized(d);
     return d;
   }
@@ -255,7 +257,7 @@ public class ConfigurationService {
   }
 
   public void delete(UUID id, UUID cid) {
-    Decision d = resolver.get(id, cid);
+    Decision d = resolver.getForUpdate(id, cid);
     d.setDeletedAt(Instant.now());
     d.setUpdatedAt(Instant.now());
   }
@@ -418,6 +420,7 @@ public class ConfigurationService {
       c.setInputMode("score");
       c.setScaleMin(null);
       c.setScaleMax(null);
+      c.setScaleFrozen(false); // 범위를 비웠으니 고정 표시도 지운다(범위 없이 "고정됨"으로 남지 않게)
       c.setDirection(null);
     }
     require(
@@ -435,8 +438,14 @@ public class ConfigurationService {
           Set.of("higher_better", "lower_better")
               .contains(c.getDirection() == null ? "" : c.getDirection()),
           "direction");
-      if (r.scaleMin() != null) c.setScaleMin(r.scaleMin());
-      if (r.scaleMax() != null) c.setScaleMax(r.scaleMax());
+      if (r.scaleMin() != null) {
+        requireSafeNumber(r.scaleMin(), "scaleMin");
+        c.setScaleMin(r.scaleMin());
+      }
+      if (r.scaleMax() != null) {
+        requireSafeNumber(r.scaleMax(), "scaleMax");
+        c.setScaleMax(r.scaleMax());
+      }
       require(
           c.getScaleMin() == null
               || c.getScaleMax() == null
@@ -500,6 +509,17 @@ public class ConfigurationService {
     List<OptionValue> old =
         valueRows(d).stream().filter(v -> v.getCriterion().getId().equals(crid)).toList();
     configure(c, r, d, false);
+    // 순위 입력 기준에는 임계 조건을 걸 수 없다. 이미 걸려 있으면 설정 API와 엔진이 서로 다르게 판정하므로 먼저 조건을 지우게 한다
+    if ("rank".equals(c.getInputMode()) && !"rank".equals(oldMode)) {
+      require(
+          rows(Condition.class, d).stream()
+              .noneMatch(
+                  k ->
+                      "threshold".equals(k.getKind())
+                          && k.getCriterion() != null
+                          && k.getCriterion().getId().equals(crid)),
+          "inputMode");
+    }
     if ("rating".equals(c.getType())
         && "score".equals(c.getInputMode())
         && Objects.equals(oldType, c.getType())
@@ -515,10 +535,12 @@ public class ConfigurationService {
           "levels");
     }
     var result = criterion(c);
-    if (Boolean.TRUE.equals(c.getScaleFrozen())
-        && (!Objects.equals(min, c.getScaleMin())
+    boolean scaleChanged =
+        !Objects.equals(min, c.getScaleMin())
             || !Objects.equals(max, c.getScaleMax())
-            || count != (c.getLevels() == null ? 0 : c.getLevels().size())))
+            || count != (c.getLevels() == null ? 0 : c.getLevels().size());
+    // 숫자형은 질문을 시작하면 척도가 고정되고, 단계형은 척도 고정 표시가 없으므로 이 기준이 들어간 유효한 답변이 있는지로 본다
+    if (scaleChanged && (Boolean.TRUE.equals(c.getScaleFrozen()) || hasValidAnswers(d, crid)))
       result.put("warning", "SCALE_CHANGED_AFTER_ANSWERS");
     if (!Objects.equals(oldMode, c.getInputMode()) || !Objects.equals(oldType, c.getType())) {
       if ("score".equals(oldMode) && "rank".equals(c.getInputMode())) {
@@ -556,6 +578,30 @@ public class ConfigurationService {
     em.flush();
     bump(d);
     return obj("invalidatedAnswers", invalid);
+  }
+
+  /**
+   * 엔진은 값을 double로 계산하므로, 저장하는 숫자는 double이 정확히 담을 수 있는 범위여야 한다: 절댓값 1e15 이하, 유효숫자 15자리 이하. 그보다 크거나
+   * 정밀한 값은 저장은 되는데 질문 시작에서 500이 나거나(무한대), 설정 API와 엔진의 필수 조건 판정이 달라진다.
+   */
+  static void requireSafeNumber(BigDecimal n, String field) {
+    boolean ok =
+        n.abs().compareTo(new BigDecimal("1e15")) <= 0 && n.stripTrailingZeros().precision() <= 15;
+    if (!ok) {
+      throw new FlowError(
+          HttpStatus.BAD_REQUEST,
+          "VALIDATION_ERROR",
+          "숫자는 절댓값 1e15 이하, 유효숫자 15자리 이하여야 합니다.",
+          Map.of(field, "허용 범위를 벗어난 숫자입니다."));
+    }
+  }
+
+  private boolean hasValidAnswers(Decision d, UUID criterionId) {
+    return rows(Answer.class, d).stream()
+        .anyMatch(
+            a ->
+                Boolean.TRUE.equals(a.getIsValid())
+                    && contains(a.getQuestion().getSpec(), criterionId.toString()));
   }
 
   private boolean contains(Object o, String id) {
@@ -625,11 +671,7 @@ public class ConfigurationService {
     Set<String> seen = new HashSet<>();
     if (r.items() != null)
       for (var x : r.items()) {
-        require(
-            x != null
-                && x.optionId() != null
-                && x.criterionId() != null,
-            "value");
+        require(x != null && x.optionId() != null && x.criterionId() != null, "value");
         require(seen.add(x.optionId() + "/" + x.criterionId()), "items");
         Option o = owned(Option.class, x.optionId(), d);
         Criterion c = owned(Criterion.class, x.criterionId(), d);
@@ -649,7 +691,12 @@ public class ConfigurationService {
           v.setValueNum(null);
         } else {
           require(x.value().isNumber(), "value");
+          // 1e400 같은 값은 JSON 읽기에서 무한대(double)가 되어 BigDecimal로 바꿀 수 없다
+          require(
+              !x.value().isFloatingPointNumber() || Double.isFinite(x.value().doubleValue()),
+              "value");
           BigDecimal n = x.value().decimalValue();
+          requireSafeNumber(n, "value");
           if ("rating".equals(c.getType()))
             require(
                 n.stripTrailingZeros().scale() <= 0
@@ -813,6 +860,7 @@ public class ConfigurationService {
 
   public Condition appendCondition(Decision d, ConditionRequest r, String origin) {
     resolver.ensureNotFinalized(d);
+    if (rows(Condition.class, d).size() >= MAX_CONDITIONS) throw conflict("LIMIT_EXCEEDED");
     require(
         r != null && r.kind() != null && Set.of("threshold", "required_tag").contains(r.kind()),
         "kind");
@@ -824,6 +872,7 @@ public class ConfigurationService {
       require(r.criterionId() != null, "criterionId");
       require(r.operator() != null && Set.of("<=", ">=", "==").contains(r.operator()), "operator");
       require(r.value() != null, "value");
+      requireSafeNumber(r.value(), "value");
       Criterion criterion = owned(Criterion.class, r.criterionId(), d);
       require(!"rank".equals(criterion.getInputMode()), "criterionId");
       c.setCriterion(criterion);

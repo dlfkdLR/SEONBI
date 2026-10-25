@@ -22,7 +22,6 @@ import com.seonbi.service.EngineBridge.DecisionData;
 import com.seonbi.service.EngineBridge.EngineInput;
 import com.seonbi.service.StateRules.Action;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.LockModeType;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
@@ -144,9 +143,7 @@ public class AnalysisService {
   }
 
   private Decision writable(UUID id, UUID clientId) {
-    Decision d = resolver.get(id, clientId);
-    em.lock(d, LockModeType.PESSIMISTIC_WRITE); // 같은 결정의 분석 캐시를 동시에 만들지 않게 한다
-    return d;
+    return resolver.getForUpdate(id, clientId); // 같은 결정의 분석 캐시를 동시에 만들지 않게 잠근다
   }
 
   /** FINALIZED면 확정 시점의 39번 응답(없으면 비어 있음 → 다시 계산). */

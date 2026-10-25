@@ -24,7 +24,6 @@ import com.seonbi.service.EngineBridge.DecisionData;
 import com.seonbi.service.EngineBridge.EngineInput;
 import com.seonbi.service.StateRules.Action;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.LockModeType;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -146,9 +145,7 @@ public class QuestionFlowService {
 
   /** 쓰기 전에 결정 행을 잠가 같은 결정의 동시 요청이 겹치지 않게 한다. */
   private Decision writable(UUID id, UUID clientId) {
-    Decision d = resolver.get(id, clientId);
-    em.lock(d, LockModeType.PESSIMISTIC_WRITE);
-    return d;
+    return resolver.getForUpdate(id, clientId);
   }
 
   private static DecisionStatus statusOf(Decision d) {

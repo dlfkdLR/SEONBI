@@ -10,7 +10,10 @@ import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.type.SqlTypes;
 
 @Entity
-@Table(name = "answers", uniqueConstraints = @UniqueConstraint(columnNames = "question_id"))
+@Table(
+    name = "answers",
+    uniqueConstraints = @UniqueConstraint(columnNames = "question_id"),
+    indexes = @Index(columnList = "decision_id"))
 @Check(constraints = "preference_kind in ('stated','revealed','none')")
 public class Answer {
   @Id

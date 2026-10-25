@@ -38,8 +38,7 @@ public final class Requests {
       BigDecimal scaleMax,
       String source) {}
 
-  public record ValueItem(
-      @NotNull UUID optionId, @NotNull UUID criterionId, JsonNode value) {}
+  public record ValueItem(@NotNull UUID optionId, @NotNull UUID criterionId, JsonNode value) {}
 
   public record Ranking(UUID criterionId, List<List<UUID>> order) {}
 
@@ -55,7 +54,7 @@ public final class Requests {
       List<UUID> satisfiedBy,
       String source) {}
 
-  public record Conditions(@NotNull List<@NotNull @Valid ConditionRequest> items) {}
+  public record Conditions(@NotNull @Size(max = 50) List<@NotNull @Valid ConditionRequest> items) {}
 
   public record Count(@Min(1) @Max(8) Integer count) {}
 }

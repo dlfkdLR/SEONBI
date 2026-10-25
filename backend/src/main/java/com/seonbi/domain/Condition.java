@@ -8,7 +8,7 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
-@Table(name = "conditions")
+@Table(name = "conditions", indexes = @Index(columnList = "decision_id"))
 @Check(
     constraints =
         "kind in ('threshold','required_tag') and source in ('user','ai_recommended','free_text')")

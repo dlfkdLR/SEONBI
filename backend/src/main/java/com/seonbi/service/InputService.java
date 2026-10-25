@@ -21,7 +21,6 @@ import com.seonbi.dto.Requests.CriterionRequest;
 import com.seonbi.dto.Requests.OptionRequest;
 import com.seonbi.service.StateRules.Action;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.LockModeType;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -130,9 +129,7 @@ public class InputService {
   @Transactional
   public CResponses.ConfirmInput confirm(
       UUID decisionId, UUID clientId, UUID inputId, CRequests.ConfirmInput request) {
-    Decision d = resolver.get(decisionId, clientId);
-    em.lock(d, LockModeType.PESSIMISTIC_WRITE);
-    em.refresh(d);
+    Decision d = resolver.getForUpdate(decisionId, clientId);
     resolver.ensureNotFinalized(d);
     FlowErrors.raiseIf(
         StateRules.check(Action.FREE_INPUT, DecisionStatus.valueOf(d.getStatus())),
@@ -214,9 +211,7 @@ public class InputService {
   /** 30번. */
   @Transactional
   public CResponses.RejectInput reject(UUID decisionId, UUID clientId, UUID inputId) {
-    Decision d = resolver.get(decisionId, clientId);
-    em.lock(d, LockModeType.PESSIMISTIC_WRITE);
-    em.refresh(d);
+    Decision d = resolver.getForUpdate(decisionId, clientId);
     resolver.ensureNotFinalized(d);
     FreeTextInput row = pendingInput(d, inputId);
     row.setStatus("REJECTED");

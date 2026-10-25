@@ -6,7 +6,12 @@ import java.util.*;
 import org.hibernate.annotations.Check;
 
 @Entity
-@Table(name = "decisions", indexes = @Index(columnList = "client_id, updated_at DESC"))
+@Table(
+    name = "decisions",
+    indexes = {
+      @Index(columnList = "client_id, updated_at DESC"),
+      @Index(columnList = "updated_at DESC, id DESC") // 공유 목록 정렬
+    })
 @Check(
     constraints =
         "category in ('purchase','career','study','activity','living','etc') and status in ('DRAFT','QUESTIONING','ANALYZED','FINALIZED') and char_length(description) <= 1000")

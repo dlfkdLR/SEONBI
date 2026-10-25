@@ -8,7 +8,6 @@ import com.seonbi.domain.FinalChoice;
 import com.seonbi.domain.Option;
 import com.seonbi.service.StateRules.Action;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.LockModeType;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -47,8 +46,7 @@ public class FinalizeService {
   @SuppressWarnings("unchecked")
   public Map<String, Object> finalizeDecision(
       UUID decisionId, UUID clientId, UUID optionId, String memo) {
-    Decision d = resolver.get(decisionId, clientId);
-    em.lock(d, LockModeType.PESSIMISTIC_WRITE);
+    Decision d = resolver.getForUpdate(decisionId, clientId);
     Map<String, Object> details = details("decisionId", d.getId());
     FlowErrors.raiseIf(
         StateRules.check(Action.FINALIZE, DecisionStatus.valueOf(d.getStatus())), details);
