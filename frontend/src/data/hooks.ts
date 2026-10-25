@@ -7,11 +7,11 @@ import { blankDecision } from './examples';
 import { useUI } from '../lib/state';
 
 notifyManager.setScheduler(queueMicrotask);
-export const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, retry: false, refetchOnWindowFocus: false }, mutations: { retry: false } } });
+export const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, retry: false, refetchOnWindowFocus: true }, mutations: { retry: false } } });
 export const useOwner = () => getClientId();
 export function useDecisions() {
   const owner = useOwner();
-  return useInfiniteQuery({ queryKey: ['decisions', owner], initialPageParam: undefined as string | undefined,
+  return useInfiniteQuery({ queryKey: ['decisions', owner], refetchInterval: 30_000, initialPageParam: undefined as string | undefined,
     queryFn: ({ pageParam }) => repository.list(pageParam), getNextPageParam: last => last.nextCursor ?? undefined });
 }
 export function useDecision(id: string) {

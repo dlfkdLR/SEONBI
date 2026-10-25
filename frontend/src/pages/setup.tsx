@@ -24,7 +24,7 @@ export default function SetupPage() {
   useEffect(() => setErrors([]), [step]);
   if (isPending) return <Loading />;
   if (error) return <main className="page" id="main"><ErrorNotice message={error.message} /></main>;
-  if (!d) return <main className="page" id="main"><PageHeading title="결정을 찾을 수 없어요." /><Link to="/">내 결정으로 돌아가기</Link></main>;
+  if (!d) return <main className="page" id="main"><PageHeading title="결정을 찾을 수 없어요." /><Link to="/">공유 결정으로 돌아가기</Link></main>;
   if (![1, 2, 3, 4].includes(step)) return <Navigate to={`/decisions/${id}/setup/1`} replace />;
   const locked = d.status === 'FINALIZED';
   const goStep = async (to: number) => {
