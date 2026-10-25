@@ -22,7 +22,7 @@ export function Modal({ title, description, open, onClose, children, wide = fals
   </Dialog.Content></Dialog.Portal></Dialog.Root>;
 }
 export function PageHeading({ context, title, description }: { context?: string; title: string; description?: string }) {
-  return <header className="page-heading">{context && <p className="eyebrow muted">{context}</p>}<h1>{title}</h1>{description && <p className="muted">{description}</p>}</header>;
+  return <header className="page-heading">{context && <p className="eyebrow">{context}</p>}<h1>{title}</h1>{description && <p className="muted">{description}</p>}</header>;
 }
 export function Toast() {
   const { toast, dismiss } = useUI();
