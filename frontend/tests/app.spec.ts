@@ -114,7 +114,7 @@ test('PC 화면은 피그마 크기에서 가로로 넘치지 않고 예시의 �
   await expect(page.locator('.home-preview')).toBeVisible();
   await page.screenshot({ path: info.outputPath('home-1440.png'), fullPage: true, animations: 'disabled' });
   await page.goto('/example'); await expect(page.locator('.criterion-card.selected')).toHaveCount(4);
-  await expect(page.locator('.criterion-card.selected').first()).toHaveCSS('background-color', 'rgb(229, 237, 248)');
+  await expect(page.locator('.criterion-card.selected').first()).toHaveCSS('background-color', 'rgb(240, 228, 215)');
   await page.screenshot({ path: info.outputPath('criteria-1440.png'), fullPage: true, animations: 'disabled' });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.getByRole('button', { name: '정보 입력 예시 보기' }).click(); await page.getByRole('button', { name: '필수 조건 예시 보기' }).click();
