@@ -8,15 +8,23 @@ import jakarta.persistence.EntityManager;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * AI 호출 상한과 사용량 기록 (개발기획서 12.2, 역할 문서 5.4).
@@ -25,12 +33,14 @@ import org.springframework.stereotype.Service;
  *   <li>사용자가 직접 부르는 호출(18 recommend_options, 23 recommend_criteria, 28 extract_conditions)만 클라이언트
  *       ID당 하루 {@code AI_DAILY_QUOTA_PER_CLIENT}회(기본 50)로 센다. 세 가지를 합쳐서 센다. 서버가 자동으로 부르는
  *       phrase_question· summarize_options·explain_result는 세지 않는다(대신 결과를 캐시한다).
- *   <li>세는 방법: 오늘(UTC) {@code ai_usage_logs} 행 수. 기록은 AI 호출마다(제공자 시도 하나당 한 줄, 실패 포함) 남기므로 "횟수"는 제공자
- *       호출 시도 수다 (명세에 시도/요청 구분 없음, 가장 단순한 읽기).
- *   <li>초과 처리: 18·28은 429 AI_QUOTA_EXCEEDED, 23은 오류 대신 {@link #exceeded}가 true를 돌려줘 호출자가 기본 기준 목록으로
- *       대체한다.
- *   <li>기록은 요청 트랜잭션이 되돌려져도 남도록 별도 트랜잭션으로 저장한다. 기록에는 호출 종류·제공자·모델·토큰 수·지연만 담는다(프롬프트· 사용자 원문 없음,
- *       8.1).
+ *   <li>세는 방법: 오늘(UTC) {@code ai_usage_logs} 행 수 + 지금 진행 중인 호출 수. 기록은 제공자 시도 하나당 한 줄(재시도·실패 포함)이다.
+ *   <li><b>원자적 예약</b>: 확인과 기록 사이에 다른 요청이 끼어들어 한도를 넘기지 않도록, 호출 전에 {@link #tryReserve}로 자리를 잡고 요청이
+ *       끝나면 놓는다. 같은 서버 안에서는 클라이언트 ID별로 직렬화한다(서버를 여러 대로 늘리면 DB 잠금으로 바꿔야 한다).
+ *   <li>초과 처리: 18·28은 429 AI_QUOTA_EXCEEDED, 23은 오류 대신 {@link #tryReserve}가 false를 돌려줘 호출자가 기본 기준
+ *       목록으로 대체한다.
+ *   <li><b>기록은 요청이 끝난 뒤 별도 트랜잭션으로 저장한다.</b> 요청이 AI_UNAVAILABLE 같은 오류로 되돌려져도 시도 기록은 남는다(비용이 생긴 시도가
+ *       한도에서 사라지지 않게). 요청 트랜잭션이 결정 행을 잠근 채로 같은 시점에 외래키가 걸린 행을 넣으면 서로 기다리므로, 반드시 요청 트랜잭션이 끝난
+ *       뒤(afterCompletion)에 넣는다. 기록에는 호출 종류·제공자·모델·토큰 수·지연만 담는다(프롬프트·사용자 원문 없음, 8.1).
  * </ul>
  */
 @Service
@@ -43,11 +53,19 @@ public class AiUsageService {
   private static final Logger log = LoggerFactory.getLogger(AiUsageService.class);
 
   private final EntityManager em;
+  private final TransactionTemplate separateTx;
   private final int dailyLimit;
+  // 클라이언트별 진행 중 호출 수와 직렬화용 자물쇠
+  private final ConcurrentHashMap<UUID, AtomicInteger> inFlight = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<UUID, Object> locks = new ConcurrentHashMap<>();
 
   public AiUsageService(
-      EntityManager em, @Value("${AI_DAILY_QUOTA_PER_CLIENT:50}") int dailyLimit) {
+      EntityManager em,
+      PlatformTransactionManager transactionManager,
+      @Value("${AI_DAILY_QUOTA_PER_CLIENT:50}") int dailyLimit) {
     this.em = em;
+    this.separateTx = new TransactionTemplate(transactionManager);
+    this.separateTx.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     this.dailyLimit = dailyLimit;
   }
 
@@ -57,27 +75,54 @@ public class AiUsageService {
 
   private long countToday(UUID clientId) {
     Instant since = LocalDate.now(ZoneOffset.UTC).atStartOfDay().toInstant(ZoneOffset.UTC);
-    return em.createQuery(
-            "select count(l) from AiUsageLog l where l.clientId=:cid and l.callType in :types"
-                + " and l.createdAt>=:since",
-            Long.class)
-        .setParameter("cid", clientId)
-        .setParameter("types", USER_CALL_TYPES)
-        .setParameter("since", since)
-        .getSingleResult();
+    // 요청 트랜잭션과 무관하게 이미 저장된 행만 세므로 새 트랜잭션에서 읽는다
+    return separateTx.execute(
+        status ->
+            em.createQuery(
+                    "select count(l) from AiUsageLog l where l.clientId=:cid and l.callType in"
+                        + " :types and l.createdAt>=:since",
+                    Long.class)
+                .setParameter("cid", clientId)
+                .setParameter("types", USER_CALL_TYPES)
+                .setParameter("since", since)
+                .getSingleResult());
   }
 
-  /** 오늘 상한을 이미 다 썼는가. 사용자가 부르는 호출이 아니면 항상 false(세지 않는다). */
-  public boolean exceeded(UUID clientId, String callType) {
+  /**
+   * 호출 자리를 잡는다. 사용자가 부르는 호출이 아니면 항상 true(세지 않는다). 오늘 상한과 진행 중인 호출을 합쳐 이미 다 찼으면 false. 잡은 자리는 현재
+   * 트랜잭션이 끝날 때(기록을 저장한 뒤) 자동으로 놓는다. 트랜잭션 밖에서 부르면 바로 놓는다.
+   */
+  public boolean tryReserve(UUID clientId, String callType) {
     if (!USER_CALL_TYPES.contains(callType)) {
-      return false;
+      return true;
     }
-    return countToday(clientId) >= dailyLimit;
+    synchronized (locks.computeIfAbsent(clientId, k -> new Object())) {
+      AtomicInteger running = inFlight.computeIfAbsent(clientId, k -> new AtomicInteger());
+      if (countToday(clientId) + running.get() >= dailyLimit) {
+        return false;
+      }
+      if (TransactionSynchronizationManager.isSynchronizationActive()) {
+        running.incrementAndGet();
+        TransactionSynchronizationManager.registerSynchronization(
+            new TransactionSynchronization() {
+              @Override
+              public int getOrder() {
+                return Integer.MAX_VALUE; // 기록 저장(아래 PendingUsage)이 먼저 끝난 뒤에 놓는다
+              }
+
+              @Override
+              public void afterCompletion(int status) {
+                running.decrementAndGet();
+              }
+            });
+      }
+      return true;
+    }
   }
 
-  /** 상한 검사: 넘었으면 429 AI_QUOTA_EXCEEDED. (23번은 오류 대신 {@link #exceeded}로 판단해 템플릿으로 대체한다.) */
+  /** 상한 검사: 자리를 못 잡으면 429 AI_QUOTA_EXCEEDED. (23번은 오류 대신 {@link #tryReserve}로 판단해 템플릿으로 대체한다.) */
   public void checkOrThrow(UUID clientId, String callType) {
-    if (exceeded(clientId, callType)) {
+    if (!tryReserve(clientId, callType)) {
       throw new FlowError(
           HttpStatus.TOO_MANY_REQUESTS,
           "AI_QUOTA_EXCEEDED",
@@ -87,30 +132,92 @@ public class AiUsageService {
   }
 
   /**
-   * LlmCalls·LlmRouter의 onUsage로 넘길 기록 콜백. 호출한 요청의 트랜잭션 안에서 저장한다. 별도 트랜잭션으로 저장하면 요청이 잡고 있는 결정 행의
-   * 잠금과 ai_usage_logs의 외래키 검사가 서로 기다려 멈추기 때문이다. 대신 요청이 오류로 되돌려지면 그 요청의 기록도 함께 사라진다. 저장 실패는 요청을 깨뜨리지
-   * 않고 로그만 남긴다.
+   * LlmCalls·LlmRouter의 onUsage로 넘길 기록 콜백. 호출한 요청의 트랜잭션이 끝난 뒤(커밋이든 롤백이든) 별도 트랜잭션에서 저장한다. 저장 실패는 요청을
+   * 깨뜨리지 않고 로그만 남긴다.
    */
   public Consumer<LlmUsage> recorder(UUID clientId, UUID decisionId) {
     return usage -> {
-      try {
-        AiUsageLog row = new AiUsageLog();
-        row.setClientId(clientId);
-        row.setDecision(decisionId == null ? null : em.getReference(Decision.class, decisionId));
-        row.setCallType(usage.callType());
-        row.setProvider(usage.provider());
-        row.setModel(
-            usage.model() == null || usage.model().length() <= 50
-                ? usage.model()
-                : usage.model().substring(0, 50)); // model 열 길이(50)를 넘으면 커밋이 실패해 본 요청까지 되돌려진다
-        row.setInputTokens(usage.inputTokens());
-        row.setOutputTokens(usage.outputTokens());
-        row.setLatencyMs((int) usage.latencyMs());
-        row.setSuccess(usage.success());
-        em.persist(row);
-      } catch (RuntimeException e) {
-        log.warn("AI 사용량 기록 실패", e);
+      Pending row = new Pending(clientId, decisionId, usage);
+      if (TransactionSynchronizationManager.isSynchronizationActive()) {
+        pendingOfCurrentTx().rows.add(row);
+      } else {
+        save(List.of(row));
       }
     };
+  }
+
+  // 현재 트랜잭션에 딸린 대기 목록. 처음 필요할 때 만들고 트랜잭션이 끝나면 저장한다
+  private PendingUsage pendingOfCurrentTx() {
+    for (TransactionSynchronization sync :
+        TransactionSynchronizationManager.getSynchronizations()) {
+      if (sync instanceof PendingUsage pending) {
+        return pending;
+      }
+    }
+    PendingUsage pending = new PendingUsage();
+    TransactionSynchronizationManager.registerSynchronization(pending);
+    return pending;
+  }
+
+  private record Pending(UUID clientId, UUID decisionId, LlmUsage usage) {}
+
+  private final class PendingUsage implements TransactionSynchronization {
+    final List<Pending> rows = new ArrayList<>();
+
+    @Override
+    public int getOrder() {
+      return Integer.MAX_VALUE - 1; // 자리 놓기보다 먼저
+    }
+
+    @Override
+    public void afterCompletion(int status) {
+      save(rows);
+    }
+  }
+
+  private void save(List<Pending> rows) {
+    if (rows.isEmpty()) {
+      return;
+    }
+    try {
+      separateTx.executeWithoutResult(
+          status -> {
+            for (Pending p : rows) {
+              persist(p, p.decisionId());
+            }
+          });
+    } catch (RuntimeException e) {
+      // 결정 행이 사라졌거나 제약에 걸렸으면 결정 연결 없이 다시 시도한다
+      log.warn("AI 사용량 기록 실패, 결정 연결 없이 다시 시도", e);
+      try {
+        separateTx.executeWithoutResult(
+            status -> {
+              for (Pending p : rows) {
+                persist(p, null);
+              }
+            });
+      } catch (RuntimeException again) {
+        log.warn("AI 사용량 기록 실패", again);
+      }
+    }
+  }
+
+  private void persist(Pending p, UUID decisionId) {
+    LlmUsage usage = p.usage();
+    AiUsageLog row = new AiUsageLog();
+    row.setClientId(p.clientId());
+    row.setDecision(decisionId == null ? null : em.getReference(Decision.class, decisionId));
+    row.setCallType(usage.callType());
+    row.setProvider(usage.provider());
+    row.setModel(cut(usage.model(), 50)); // 열 길이를 넘으면 커밋이 실패한다
+    row.setInputTokens(usage.inputTokens());
+    row.setOutputTokens(usage.outputTokens());
+    row.setLatencyMs((int) usage.latencyMs());
+    row.setSuccess(usage.success());
+    em.persist(row);
+  }
+
+  private static String cut(String value, int max) {
+    return value == null || value.length() <= max ? value : value.substring(0, max);
   }
 }

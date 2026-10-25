@@ -116,15 +116,30 @@ public final class LlmRouter {
         ProviderAdapter adapter = adapterFor(spec);
         long started = System.nanoTime();
         try {
+          if (adapter.reportsAttempts()) {
+            // 어댑터가 시도마다(재시도·실패 포함) 알려 주므로 여기서 따로 기록하지 않는다
+            return adapter
+                .generate(
+                    schema,
+                    prompt,
+                    maxTokens,
+                    attempt ->
+                        emit(
+                            attempt.withLatencyAndCall(attempt.latencyMs(), call.key()),
+                            extraUsage))
+                .parsed();
+          }
           Generated<T> generated = adapter.generate(schema, prompt, maxTokens);
           emit(generated.usage().withLatencyAndCall(ms(started), call.key()), extraUsage);
           return generated.parsed();
         } catch (LlmException e) {
           last = e;
-          // 실패한 시도도 기록하고 다음 모델로 넘어간다
-          emit(
-              new LlmUsage(spec.provider(), spec.model(), 0, 0, ms(started), false, call.key()),
-              extraUsage);
+          if (!adapter.reportsAttempts()) {
+            // 실패한 시도도 기록하고 다음 모델로 넘어간다
+            emit(
+                new LlmUsage(spec.provider(), spec.model(), 0, 0, ms(started), false, call.key()),
+                extraUsage);
+          }
         }
       }
       throw new LlmException.AiUnavailable("사용 가능한 모델이 없습니다", last);

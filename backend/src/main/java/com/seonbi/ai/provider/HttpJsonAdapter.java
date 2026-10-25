@@ -12,6 +12,7 @@ import java.net.URI;
 import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * HTTP로 JSON을 주고받는 제공자 어댑터의 공통 뼈대 (개발기획서 6.4). 제공자마다 다른 것(주소·헤더·요청 모양·응답에서 글 꺼내기)만 하위 클래스가 채운다.
@@ -56,14 +57,32 @@ abstract class HttpJsonAdapter implements ProviderAdapter {
   abstract int[] tokens(JsonNode root);
 
   @Override
+  public boolean reportsAttempts() {
+    return true;
+  }
+
+  @Override
   public <T> Generated<T> generate(Class<T> schema, String prompt, int maxTokens) {
+    return generate(schema, prompt, maxTokens, usage -> {});
+  }
+
+  @Override
+  public <T> Generated<T> generate(
+      Class<T> schema, String prompt, int maxTokens, Consumer<LlmUsage> onAttempt) {
     LlmException last = null;
     for (int attempt = 0; attempt < 2; attempt++) { // 최초 1회 + 재시도 1회
+      long started = System.nanoTime();
+      int[] tokens = new int[2];
       try {
-        return once(schema, prompt, maxTokens);
+        Generated<T> done = once(schema, prompt, maxTokens, tokens);
+        onAttempt.accept(done.usage().withLatencyAndCall(ms(started), ""));
+        return done;
       } catch (LlmException.SchemaViolation e) {
+        // 응답은 받았으므로 토큰은 이미 비용이다
+        onAttempt.accept(failed(tokens, ms(started)));
         last = e;
       } catch (LlmException.ProviderError e) {
+        onAttempt.accept(failed(tokens, ms(started)));
         if (!e.retryable()) {
           throw e;
         }
@@ -73,7 +92,15 @@ abstract class HttpJsonAdapter implements ProviderAdapter {
     throw last;
   }
 
-  private <T> Generated<T> once(Class<T> schema, String prompt, int maxTokens) {
+  private LlmUsage failed(int[] tokens, long latencyMs) {
+    return new LlmUsage(provider(), model, tokens[0], tokens[1], latencyMs, false, "");
+  }
+
+  private static long ms(long startedNanos) {
+    return (System.nanoTime() - startedNanos) / 1_000_000;
+  }
+
+  private <T> Generated<T> once(Class<T> schema, String prompt, int maxTokens, int[] tokensOut) {
     if (apiKey == null || apiKey.isBlank()) {
       throw new LlmConfigException(provider() + " API 키가 없습니다");
     }
@@ -102,13 +129,15 @@ abstract class HttpJsonAdapter implements ProviderAdapter {
     } catch (IOException e) {
       throw new LlmException.SchemaViolation(provider() + " 응답이 JSON이 아닙니다");
     }
+    int[] used = tokens(root);
+    tokensOut[0] = used[0];
+    tokensOut[1] = used[1];
     String text = extractText(root);
     if (text == null || text.isBlank()) {
       throw new LlmException.SchemaViolation(provider() + " 응답이 비어 있습니다");
     }
     T parsed = Json.parse(schema, text); // 같은 record 스키마로 재검증한다 (6.4 공통 검증)
-    int[] t = tokens(root);
-    // 실제 지연과 호출 종류는 라우터가 채운다
-    return new Generated<>(parsed, new LlmUsage(provider(), model, t[0], t[1], 0, true, ""));
+    // 지연은 시도 끝에서, 호출 종류는 라우터가 채운다
+    return new Generated<>(parsed, new LlmUsage(provider(), model, used[0], used[1], 0, true, ""));
   }
 }

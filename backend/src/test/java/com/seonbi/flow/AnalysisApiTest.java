@@ -233,7 +233,7 @@ class AnalysisApiTest extends FlowTestBase {
   @Test
   void AI_호출_상한은_사용자_호출_세_가지만_합쳐서_센다() {
     UUID client = UUID.randomUUID();
-    assertThat(usage.exceeded(client, "extract_conditions")).isFalse();
+    assertThat(usage.tryReserve(client, "extract_conditions")).isTrue();
     tx.executeWithoutResult(
         status -> {
           for (int i = 0; i < usage.dailyLimit(); i++) {
@@ -260,9 +260,9 @@ class AnalysisApiTest extends FlowTestBase {
           auto.setSuccess(true);
           em.persist(auto);
         });
-    assertThat(usage.exceeded(client, "extract_conditions")).isTrue();
-    assertThat(usage.exceeded(client, "phrase_question")).isFalse();
-    assertThat(usage.exceeded(UUID.randomUUID(), "extract_conditions")).isFalse();
+    assertThat(usage.tryReserve(client, "extract_conditions")).isFalse();
+    assertThat(usage.tryReserve(client, "phrase_question")).isTrue();
+    assertThat(usage.tryReserve(UUID.randomUUID(), "extract_conditions")).isTrue();
     assertThatThrownBy(() -> usage.checkOrThrow(client, "recommend_options"))
         .isInstanceOfSatisfying(
             FlowError.class,
@@ -270,9 +270,9 @@ class AnalysisApiTest extends FlowTestBase {
               assertThat(e.getCode()).isEqualTo("AI_QUOTA_EXCEEDED");
               assertThat(e.getStatus().value()).isEqualTo(429);
             });
-    assertThat(usage.exceeded(client, "recommend_criteria"))
+    assertThat(usage.tryReserve(client, "recommend_criteria"))
         .as("23번은 오류 대신 template으로 대체")
-        .isTrue();
+        .isFalse();
   }
 
   @Test

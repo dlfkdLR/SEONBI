@@ -286,6 +286,7 @@ public class QuestionFlowService {
   private static Phrased phrase(
       Map<String, Object> obj,
       Map<String, Object> display,
+      List<List<ScenarioCheck.Expect>> expected, // 상황형이면 서버가 정한 기준별 방향·크기, 아니면 null
       Function<Map<String, Object>, Optional<PhrasedQuestion>> phraser) {
     if (phraser == null) {
       return new Phrased(display, "template");
@@ -306,19 +307,27 @@ public class QuestionFlowService {
       out.put("title", r.title());
     }
     String[][] options = {{"optionA", r.optionADescription()}, {"optionB", r.optionBDescription()}};
-    for (String[] o : options) {
+    for (int i = 0; i < options.length; i++) {
+      String[] o = options[i];
       Object side = payload.get(o[0]);
       if (o[1] != null
           && side instanceof Map<?, ?> m
           && m.get("description") instanceof String template
-          && informative(template, o[1])) {
+          && (expected != null
+              ? ScenarioCheck.consistent(expected.get(i), o[1]) // 좋음·나쁨이 뒤집히면 받지 않는다
+              : informative(template, o[1]))) {
         ((Map<String, Object>) side).put("description", o[1]);
       }
     }
     String[][] labels = {{"left", r.leftLabel()}, {"right", r.rightLabel()}};
     for (String[] l : labels) {
       Object side = payload.get(l[0]);
-      if (l[1] != null && !l[1].isEmpty() && side instanceof Map<?, ?>) {
+      // 슬라이더 양끝 이름이 서버가 정한 기준 이름과 달라지면(좌우가 바뀌는 등) 받지 않는다
+      if (l[1] != null
+          && !l[1].isEmpty()
+          && side instanceof Map<?, ?> m
+          && m.get("label") instanceof String original
+          && l[1].contains(original)) {
         ((Map<String, Object>) side).put("label", l[1]);
       }
     }
@@ -349,6 +358,13 @@ public class QuestionFlowService {
       return; // 템플릿을 못 만들면 저장된 값을 그대로 둔다
     }
     Map<String, Object> templatePayload = (Map<String, Object>) template.get("payload");
+    List<List<ScenarioCheck.Expect>> both =
+        ScenarioCheck.expectations(
+            (com.seonbi.engine.QuestionSpec.ScenarioSpec)
+                EngineBridge.specFromMap(q.getSpec(), ctx.inp.criterionIds()),
+            ctx.inp.metas());
+    Map<String, List<ScenarioCheck.Expect>> expectedBySide =
+        Map.of("optionA", both.get(0), "optionB", both.get(1));
     boolean changed = false;
     for (String side : List.of("optionA", "optionB")) {
       Object cur = payload.get(side);
@@ -356,7 +372,8 @@ public class QuestionFlowService {
       if (cur instanceof Map<?, ?> c && base instanceof Map<?, ?> b) {
         String want = String.valueOf(b.get("description"));
         Object have = c.get("description");
-        if (!(have instanceof String h) || !informative(want, h)) {
+        List<ScenarioCheck.Expect> exp = expectedBySide.get(side);
+        if (!(have instanceof String h) || !ScenarioCheck.consistent(exp, h)) {
           ((Map<String, Object>) cur).put("description", want);
           changed = true;
         }
@@ -413,7 +430,11 @@ public class QuestionFlowService {
     forAi.put("id", q.getId().toString());
     forAi.put("seq", seq);
     forAi.putAll(display);
-    Phrased phrased = phrase(forAi, display, phraser);
+    List<List<ScenarioCheck.Expect>> expected =
+        spec instanceof com.seonbi.engine.QuestionSpec.ScenarioSpec sc
+            ? ScenarioCheck.expectations(sc, inp.metas())
+            : null;
+    Phrased phrased = phrase(forAi, display, expected, phraser);
     q.setDecision(ctx.decision);
     q.setSeq(seq);
     q.setType(EngineBridge.questionTypeOf(spec));

@@ -125,11 +125,11 @@ public class AiHooks
     // 23번은 상한을 넘어도 오류 대신 기본 기준 목록을 돌려준다(12.2)
     // (실제 제공자를 설정하지 않은 로컬·테스트 환경도 같은 목록을 template으로 돌려준다)
     if (usesFake(CallType.RECOMMEND_CRITERIA)
-        || usage.exceeded(d.getClientId(), "recommend_criteria")) {
+        || !usage.tryReserve(Requester.of(d), "recommend_criteria")) {
       return criteriaResult(DefaultCriteria.forCategory(d.getCategory()), "template");
     }
     CriteriaRecommendation r =
-        calls.recommendCriteria(context(d), usage.recorder(d.getClientId(), d.getId()));
+        calls.recommendCriteria(context(d), usage.recorder(Requester.of(d), d.getId()));
     return criteriaResult(r.items(), r.source());
   }
 
@@ -140,9 +140,9 @@ public class AiHooks
       throw new FlowError(
           HttpStatus.SERVICE_UNAVAILABLE, "AI_UNAVAILABLE", "지금은 선택지 추천을 사용할 수 없어요.", Map.of());
     }
-    usage.checkOrThrow(d.getClientId(), "recommend_options"); // 넘으면 429
+    usage.checkOrThrow(Requester.of(d), "recommend_options"); // 넘으면 429
     Optional<List<RecommendedOption>> r =
-        calls.recommendOptions(context(d), count, usage.recorder(d.getClientId(), d.getId()));
+        calls.recommendOptions(context(d), count, usage.recorder(Requester.of(d), d.getId()));
     if (r.isEmpty()) {
       throw new FlowError(
           HttpStatus.SERVICE_UNAVAILABLE, "AI_UNAVAILABLE", "지금은 선택지 추천을 사용할 수 없어요.", Map.of());

@@ -48,10 +48,10 @@ public class ExtractionService {
     FlowErrors.raiseIf(
         StateRules.check(Action.FREE_INPUT, DecisionStatus.valueOf(d.getStatus())),
         FlowErrors.details("decisionId", d.getId()));
-    usage.checkOrThrow(d.getClientId(), "extract_conditions"); // 넘으면 429
+    usage.checkOrThrow(Requester.of(d), "extract_conditions"); // 넘으면 429
     try {
       return calls.extractConditions(
-          context(d), text, questionContext, usage.recorder(d.getClientId(), d.getId()));
+          context(d), text, questionContext, usage.recorder(Requester.of(d), d.getId()));
     } catch (LlmException e) {
       throw new FlowError(
           HttpStatus.SERVICE_UNAVAILABLE, "AI_UNAVAILABLE", "잠시 후 다시 입력해 주세요.", Map.of());
