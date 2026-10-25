@@ -99,7 +99,10 @@ public class AiUsageService {
         row.setDecision(decisionId == null ? null : em.getReference(Decision.class, decisionId));
         row.setCallType(usage.callType());
         row.setProvider(usage.provider());
-        row.setModel(usage.model());
+        row.setModel(
+            usage.model() == null || usage.model().length() <= 50
+                ? usage.model()
+                : usage.model().substring(0, 50)); // model 열 길이(50)를 넘으면 커밋이 실패해 본 요청까지 되돌려진다
         row.setInputTokens(usage.inputTokens());
         row.setOutputTokens(usage.outputTokens());
         row.setLatencyMs((int) usage.latencyMs());

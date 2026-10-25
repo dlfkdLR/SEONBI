@@ -89,14 +89,20 @@ public class AnalysisController {
       @ClientId UUID cid,
       @PathVariable("decisionId") UUID id,
       @Valid @RequestBody SimulationRequest request) {
+    // null 항목이나 criterionId 없는 항목도 서비스의 400 검증으로 넘기려고 null을 허용하는 맵으로 만든다
     List<Map<String, Object>> weights =
         request.weights() == null
             ? null
             : request.weights().stream()
                 .map(
-                    w ->
-                        Map.<String, Object>of(
-                            "criterionId", w.criterionId(), "weight", w.weight()))
+                    w -> {
+                      Map<String, Object> item = new java.util.LinkedHashMap<>();
+                      if (w != null) {
+                        item.put("criterionId", w.criterionId());
+                        item.put("weight", w.weight());
+                      }
+                      return item;
+                    })
                 .toList();
     return mapper.convertValue(analysis.simulate(id, cid, weights), SimulationResponse.class);
   }

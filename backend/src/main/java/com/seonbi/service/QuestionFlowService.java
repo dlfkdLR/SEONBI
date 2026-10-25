@@ -184,6 +184,10 @@ public class QuestionFlowService {
   }
 
   private static Posterior fit(EngineInput inp) {
+    if (inp.v().length == 0) { // 필수 조건으로 모든 선택지가 빠지면 비교할 대상이 없다
+      throw FlowErrors.notReady(
+          "조건을 만족하는 선택지가 없습니다.", details("missing", List.of("NO_ELIGIBLE_OPTIONS")));
+    }
     return Posterior.fit(inp.seed(), inp.k(), inp.answers());
   }
 
@@ -499,6 +503,7 @@ public class QuestionFlowService {
     }
     d.setQuestionLimit(limit);
     d.setStatus(StateRules.afterQuestionStart(status).name());
+    d.setUpdatedAt(Instant.now());
     return startPayload(ctx, row.get(), extra);
   }
 
@@ -619,6 +624,8 @@ public class QuestionFlowService {
     Posterior.Summary s = fit(ctx.inp).summary(ctx.inp.v());
     boolean low = AnalysisHelpers.lowConfidence(AnalysisHelpers.topProbability(s, ctx.inp.v()));
     d.setStatus(DecisionStatus.ANALYZED.name());
+    d.setUpdatedAt(Instant.now());
+    d.setUpdatedAt(Instant.now());
     return details("reason", "USER_STOPPED", "lowConfidence", low);
   }
 

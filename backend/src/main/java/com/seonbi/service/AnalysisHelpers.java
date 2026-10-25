@@ -425,7 +425,9 @@ public final class AnalysisHelpers {
   /** 원래 값 표기: 소수 넷째 자리까지 반올림하고 정수값이면 정수로 낸다(210.0 → 210). */
   static Number num(double x) {
     double r = round(x, THRESHOLD_DIGITS);
-    return r == Math.floor(r) ? (Number) (long) r : (Number) r;
+    // long 범위를 넘는 값은 최댓값으로 잘리지 않게 실수 그대로 둔다
+    boolean fitsLong = Math.abs(r) < 9.0e15;
+    return fitsLong && r == Math.floor(r) ? (Number) (long) r : (Number) r;
   }
 
   private static String formatNum(Number n) {

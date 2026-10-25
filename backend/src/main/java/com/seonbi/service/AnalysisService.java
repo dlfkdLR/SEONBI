@@ -801,8 +801,9 @@ public class AnalysisService {
       throw FlowErrors.validation("모든 기준의 가중치가 필요합니다.", details("weights", missing));
     }
     double total = given.values().stream().mapToDouble(Double::doubleValue).sum();
-    if (total <= 0) {
-      throw FlowErrors.validation("가중치의 합이 0보다 커야 합니다.", details("weights", "합이 0보다 커야 합니다."));
+    if (!Double.isFinite(total) || total <= 0) {
+      throw FlowErrors.validation(
+          "가중치의 합은 0보다 크고 유한해야 합니다.", details("weights", "합이 0보다 크고 유한해야 합니다."));
     }
     double[] out = new double[criterionIds.size()];
     for (int k = 0; k < out.length; k++) {

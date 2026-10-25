@@ -17,7 +17,18 @@ import org.apache.commons.math3.special.Gamma;
  */
 public record Posterior(double[][] w, double[] p) {
 
-  public static final int N_PARTICLES = 4000;
+  /** 입자 수. 환경변수 ENGINE_PARTICLES(200~20000)로 바꿀 수 있고, 없거나 범위 밖이면 4000이다. */
+  public static final int N_PARTICLES = particlesFromEnv(System.getenv("ENGINE_PARTICLES"));
+
+  public static int particlesFromEnv(String value) {
+    try {
+      int n = Integer.parseInt(value == null ? "" : value.trim());
+      return n >= 200 && n <= 20000 ? n : 4000;
+    } catch (NumberFormatException e) {
+      return 4000;
+    }
+  }
+
   public static final double PRIOR_ALPHA = 1.0; // Dirichlet(1, …, 1) — 아무것도 모르는 상태
   public static final double ESS_RATIO = 0.1; // ESS < N × 0.1 이면 재샘플링
   public static final double MH_KAPPA = 50.0; // 제안 분포 Dirichlet(κ·w + 1)의 집중도
