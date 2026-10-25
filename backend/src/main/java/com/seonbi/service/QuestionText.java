@@ -137,7 +137,7 @@ public final class QuestionText {
       payload.put("optionA", linked("criterionId", p[0].id(), "label", p[0].name()));
       payload.put("optionB", linked("criterionId", p[1].id(), "label", p[1].name()));
       return wrap(
-          "ab_criteria", List.of(p[0].id(), p[1].id()), rangeTitle(p[0], ra, p[1], rb), payload);
+          "ab_criteria", List.of(p[0].id(), p[1].id()), chooseTitle(p[0], ra, p[1], rb), payload);
     }
     return scenario((ScenarioSpec) spec, criteria, scales, category);
   }
@@ -205,6 +205,19 @@ public final class QuestionText {
     return ca.name() + " 차이(" + ra + ")와 " + cb.name() + " 차이(" + rb + ") 중 어느 쪽이 더 중요한가요?";
   }
 
+  // 슬라이더와 같은 쌍을 다시 묻더라도 문장이 똑같지 않도록 "하나만 고른다면"으로 시작한다
+  private static String chooseTitle(CriterionMeta ca, String ra, CriterionMeta cb, String rb) {
+    return "하나만 고른다면, "
+        + ca.name()
+        + " 차이("
+        + ra
+        + ")와 "
+        + cb.name()
+        + " 차이("
+        + rb
+        + ") 중 무엇이 더 중요한가요?";
+  }
+
   private static Scale scaleOf(CriterionMeta c, Map<String, Scale> scales) {
     Scale scale = scales.get(c.id());
     if (scale == null) {
@@ -263,7 +276,13 @@ public final class QuestionText {
     return wrap(
         "ab_scenario",
         List.of(p[0].id(), p[1].id()),
-        "다음 두 " + nounForCategory(category) + " 중 어느 쪽을 고르시겠어요?",
+        "다음 두 "
+            + nounForCategory(category)
+            + " 중 어느 쪽을 고르시겠어요? ("
+            + p[0].name()
+            + " ↔ "
+            + p[1].name()
+            + ")",
         payload);
   }
 

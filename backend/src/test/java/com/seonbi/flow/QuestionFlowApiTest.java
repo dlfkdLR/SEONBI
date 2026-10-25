@@ -256,4 +256,66 @@ class QuestionFlowApiTest extends FlowTestBase {
     assertThat(fixed.path("optionA").path("description").asText()).isNotEqualTo("A안").contains("더");
     assertThat(fixed.path("optionB").path("description").asText()).isNotEqualTo("B안").contains("더");
   }
+
+  @Test
+  void 기준이_2개면_질문은_3개까지이고_같은_문장을_되풀이하지_않는다() throws Exception {
+    String id =
+        postJ(
+                "/api/v1/decisions",
+                Map.of(
+                    "title",
+                    "학과 고르기",
+                    "category",
+                    "career",
+                    "options",
+                    java.util.List.of(Map.of("name", "A학과"), Map.of("name", "B학과"))),
+                201)
+            .path("id")
+            .asText();
+    String base = "/api/v1/decisions/" + id;
+    java.util.List<String> options = new java.util.ArrayList<>();
+    getJ(base + "/options", 200).path("items").forEach(o -> options.add(o.path("id").asText()));
+    String fun =
+        postJ(
+                base + "/criteria",
+                Map.of("name", "만족도", "type", "numeric", "direction", "higher_better"),
+                201)
+            .path("id")
+            .asText();
+    String risk =
+        postJ(
+                base + "/criteria",
+                Map.of("name", "위험 부담", "type", "numeric", "direction", "lower_better"),
+                201)
+            .path("id")
+            .asText();
+    call(
+        org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(base + "/values"),
+        Map.of(
+            "items",
+            java.util.List.of(
+                Map.of("optionId", options.get(0), "criterionId", fun, "value", 8),
+                Map.of("optionId", options.get(1), "criterionId", fun, "value", 5),
+                Map.of("optionId", options.get(0), "criterionId", risk, "value", 4),
+                Map.of("optionId", options.get(1), "criterionId", risk, "value", 7))),
+        200);
+    JsonNode current = postJ(base + "/questions/start", null, 200).path("question");
+    java.util.List<String> titles = new java.util.ArrayList<>();
+    for (int i = 0; i < 8; i++) {
+      titles.add(current.path("title").asText());
+      JsonNode res =
+          postJ(
+              base + "/answers",
+              Map.of("questionId", current.path("id").asText(), "response", answerFor(current)),
+              201);
+      if (res.path("next").path("done").asBoolean()) {
+        break;
+      }
+      current = res.path("next").path("question");
+    }
+    assertThat(titles.size()).as("기준 2개의 질문 수").isLessThanOrEqualTo(3);
+    // 첫 질문(슬라이더) 문장은 뒤따르는 질문과 다르고, 상황형 제목에는 어느 두 기준인지가 들어 있다
+    assertThat(titles.subList(1, titles.size())).doesNotContain(titles.get(0));
+    assertThat(titles.get(titles.size() - 1)).contains("만족도").contains("위험 부담");
+  }
 }

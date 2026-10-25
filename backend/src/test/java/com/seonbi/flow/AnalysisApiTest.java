@@ -276,7 +276,7 @@ class AnalysisApiTest extends FlowTestBase {
   }
 
   @Test
-  void 질문_문장_다듬기_호출이_사용량으로_남는다() throws Exception {
+  void 실제_제공자가_없으면_질문_문장은_템플릿이고_다듬기_호출은_하지_않는다() throws Exception {
     Setup s = laptops();
     postJ(s.base() + "/questions/start", null, 200);
     Long count =
@@ -285,7 +285,7 @@ class AnalysisApiTest extends FlowTestBase {
                 Long.class)
             .setParameter("id", UUID.fromString(s.id()))
             .getSingleResult();
-    assertThat(count).isGreaterThanOrEqualTo(1);
+    assertThat(count).isZero();
   }
 
   @Test

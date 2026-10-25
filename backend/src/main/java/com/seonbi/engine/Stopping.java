@@ -6,6 +6,7 @@ import java.util.List;
 public final class Stopping {
 
   public static final int MIN_QUESTIONS = 3;
+  static final int TWO_CRITERIA_MAX = 3;
   public static final double CONFIDENT_P_BEST = 0.85;
   public static final double LOW_INFO_GAIN_BITS = 0.03;
   public static final int MAX_QUESTIONS_FLOOR = 6;
@@ -29,6 +30,9 @@ public final class Stopping {
 
   /** 첫 라운드의 질문 수 상한. 5.10: max(6, 2K), 상한 12. */
   public static int maxQuestions(int k) {
+    if (k <= 2) {
+      return TWO_CRITERIA_MAX; // 기준이 2개면 물을 쌍이 하나뿐이라 같은 질문이 반복되지 않게 슬라이더 1개 + 상황형 2개까지만 묻는다
+    }
     return Math.min(MAX_QUESTIONS_CAP, Math.max(MAX_QUESTIONS_FLOOR, 2 * k));
   }
 

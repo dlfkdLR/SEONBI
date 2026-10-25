@@ -3,9 +3,11 @@ package com.seonbi.service;
 import static com.seonbi.service.FlowErrors.details;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.seonbi.ai.CallType;
 import com.seonbi.ai.Json;
 import com.seonbi.ai.LlmCalls;
 import com.seonbi.ai.LlmCalls.PhrasedQuestion;
+import com.seonbi.ai.LlmRouter;
 import com.seonbi.core.FlowError;
 import com.seonbi.domain.Decision;
 import com.seonbi.domain.EstimateSnapshot;
@@ -87,6 +89,7 @@ public class QuestionFlowService {
   private final ConfigurationService configuration;
   private final AiUsageService usage;
   private final ObjectProvider<LlmCalls> llm;
+  private final ObjectProvider<LlmRouter> router;
 
   public QuestionFlowService(
       EntityManager em,
@@ -94,13 +97,15 @@ public class QuestionFlowService {
       EngineBridge bridge,
       ConfigurationService configuration,
       AiUsageService usage,
-      ObjectProvider<LlmCalls> llm) {
+      ObjectProvider<LlmCalls> llm,
+      ObjectProvider<LlmRouter> router) {
     this.em = em;
     this.resolver = resolver;
     this.bridge = bridge;
     this.configuration = configuration;
     this.usage = usage;
     this.llm = llm;
+    this.router = router;
   }
 
   // ── 공통 ──────────────────────────────────────────────────────
@@ -260,7 +265,11 @@ public class QuestionFlowService {
   private Function<Map<String, Object>, Optional<PhrasedQuestion>> phraser(
       UUID clientId, UUID decisionId) {
     LlmCalls calls = llm.getIfAvailable();
-    if (calls == null) {
+    LlmRouter r = router.getIfAvailable();
+    // 실제 제공자가 없으면(fake) 질문 문장은 서버 템플릿 그대로 쓴다. fake 응답의 고정 문구가 모든 질문 제목을 덮어쓰지 않게 한다
+    if (calls == null
+        || r == null
+        || "fake".equals(r.settings().primaryFor(CallType.PHRASE_QUESTION).provider())) {
       return null;
     }
     return spec -> calls.phraseQuestion(spec, usage.recorder(clientId, decisionId));

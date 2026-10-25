@@ -117,7 +117,7 @@ def build_question(
         return _wrap(
             "ab_criteria",
             [ca.id, cb.id],
-            _range_title(ca, ra, cb, rb),
+            _choose_title(ca, ra, cb, rb),
             {
                 "optionA": {"criterionId": ca.id, "label": ca.name},
                 "optionB": {"criterionId": cb.id, "label": cb.name},
@@ -157,6 +157,11 @@ def _is_rank(c: CriterionMeta) -> bool:
 def _range_title(ca: CriterionMeta, ra: str, cb: CriterionMeta, rb: str) -> str:
     # 5.1: "가격 차이(150~189만 원)와 무게 차이(1.19~1.45kg) 중 어느 쪽이 더 중요한가요?"
     return f"{ca.name} 차이({ra})와 {cb.name} 차이({rb}) 중 어느 쪽이 더 중요한가요?"
+
+
+def _choose_title(ca: CriterionMeta, ra: str, cb: CriterionMeta, rb: str) -> str:
+    # 슬라이더와 같은 쌍을 다시 묻더라도 문장이 똑같지 않도록 "하나만 고른다면"으로 시작한다
+    return f"하나만 고른다면, {ca.name} 차이({ra})와 {cb.name} 차이({rb}) 중 무엇이 더 중요한가요?"
 
 
 def _scale_of(c: CriterionMeta, scales: Mapping[str, Scale]) -> Scale:
@@ -199,7 +204,7 @@ def _scenario(
     return _wrap(
         "ab_scenario",
         [ca.id, cb.id],
-        f"다음 두 {noun_for_category(category)} 중 어느 쪽을 고르시겠어요?",
+        f"다음 두 {noun_for_category(category)} 중 어느 쪽을 고르시겠어요? ({ca.name} ↔ {cb.name})",
         {"optionA": option_a, "optionB": option_b},
     )
 

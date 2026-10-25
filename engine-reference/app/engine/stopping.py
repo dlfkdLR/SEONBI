@@ -11,6 +11,7 @@ from numpy.typing import NDArray
 from .posterior import Answer, Posterior, best_shares
 
 MIN_QUESTIONS = 3
+TWO_CRITERIA_MAX = 3
 CONFIDENT_P_BEST = 0.85
 LOW_INFO_GAIN_BITS = 0.03
 MAX_QUESTIONS_FLOOR = 6
@@ -22,7 +23,9 @@ StopReason = Literal["CONFIDENT", "LOW_INFO_GAIN", "MAX_QUESTIONS", "USER_STOPPE
 
 
 def max_questions(K: int) -> int:
-    """첫 라운드의 질문 수 상한. 5.10: max(6, 2K), 상한 12."""
+    """첫 라운드의 질문 수 상한. 5.10: max(6, 2K), 상한 12. 기준이 2개면 물을 쌍이 하나뿐이라 3개(슬라이더 1 + 상황형 2)."""
+    if K <= 2:
+        return TWO_CRITERIA_MAX
     return min(MAX_QUESTIONS_CAP, max(MAX_QUESTIONS_FLOOR, 2 * K))
 
 
