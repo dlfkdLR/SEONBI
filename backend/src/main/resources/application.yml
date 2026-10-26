@@ -1,5 +1,6 @@
 server:
   port: 8000
+  forward-headers-strategy: framework # 프록시 뒤에서 https 주소로 리다이렉트·문서 주소를 만들도록
 spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/seonbi}
