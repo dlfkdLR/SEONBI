@@ -12,3 +12,6 @@
 .DS_Store
 
 **/.jqwik-database
+
+# 시연 영상 등 용량이 큰 파일은 저장소에 올리지 않는다
+demo/
