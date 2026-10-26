@@ -11,7 +11,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * 24. 선택지 값 조회
+         * @description 선택지 × 기준 값과 순위 입력, 아직 비어 있는 칸(missing)을 돌려준다.
+         */
         get: operations["values"];
+        /**
+         * 25. 선택지 값 일괄 저장
+         * @description 값(items)과 순위(rankings)를 한 번에 저장한다. value를 null로 보내면 그 칸을 지운다. 숫자는 0이거나 절댓값 1e-9~1e15, 유효숫자 15자리 이하.
+         */
         put: operations["values_1"];
         post?: never;
         delete?: never;
@@ -27,7 +35,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * 26. 필수 조건 조회
+         * @description 필수 조건 목록과 그 조건으로 제외되는 선택지.
+         */
         get: operations["conditions"];
+        /**
+         * 27. 필수 조건 설정
+         * @description 필수 조건 목록 전체를 바꾼다(최대 50개). threshold(기준값 비교)와 required_tag(충족하는 선택지 지정) 두 종류다.
+         */
         put: operations["conditions_1"];
         post?: never;
         delete?: never;
@@ -43,8 +59,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * 10. 결정 기록 조회
+         * @description 결정 목록(최근 수정 순). 모든 방문자의 결정이 함께 보인다. status로 거르고 cursor·limit으로 이어서 가져온다.
+         */
         get: operations["list"];
         put?: never;
+        /**
+         * 9. 결정 생성
+         * @description 새 결정을 만든다. 선택지는 함께 보낼 수 있다(최대 8개). 상태는 DRAFT로 시작한다. category는 purchase·career·study·activity·living·etc 중 하나다.
+         */
         post: operations["create"];
         delete?: never;
         options?: never;
@@ -110,8 +134,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * 15. 선택지 조회
+         * @description 선택지 목록.
+         */
         get: operations["options"];
         put?: never;
+        /**
+         * 14. 선택지 추가
+         * @description 선택지를 추가한다(최대 8개, 이름 중복 불가). 순위 입력 기준이 있으면 새 선택지는 꼴찌로 들어가고 warning이 온다.
+         */
         post: operations["option"];
         delete?: never;
         options?: never;
@@ -128,6 +160,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * 18. 선택지 추천 (AI)
+         * @description AI가 후보를 추천한다. AI 일일 상한을 넘으면 429 AI_QUOTA_EXCEEDED, AI를 쓸 수 없으면 503 AI_UNAVAILABLE.
+         */
         post: operations["recommendOptions"];
         delete?: never;
         options?: never;
@@ -144,7 +180,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 자유 입력에서 조건과 선호 추출 */
+        /**
+         * 28. 자유 입력에서 조건과 선호 추출
+         * @description 문장(1~500자)에서 기준·필수 조건·선택지·선호를 AI가 뽑는다. 결과는 PENDING이며 29번으로 확정하거나 30번으로 거절한다. 관련 없는 입력은 422 IRRELEVANT_INPUT, AI 일일 상한 초과는 429.
+         */
         post: operations["extractInput"];
         delete?: never;
         options?: never;
@@ -161,7 +200,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 자유 입력 추출 결과 거절 */
+        /**
+         * 30. 자유 입력 추출 결과 거절
+         * @description PENDING 입력을 REJECTED로 바꾼다.
+         */
         post: operations["rejectInput"];
         delete?: never;
         options?: never;
@@ -178,7 +220,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 확인한 자유 입력을 결정에 반영 */
+        /**
+         * 29. 확인한 자유 입력을 결정에 반영
+         * @description 사용자가 확인·수정한 항목을 실제 기준·선택지·필수 조건·가상 슬라이더 답변으로 만든다. 이미 처리한 입력은 409 INVALID_STATE.
+         */
         post: operations["confirmInput"];
         delete?: never;
         options?: never;
@@ -195,7 +240,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 최종 선택 확정 */
+        /**
+         * 47. 최종 선택 확정
+         * @description ANALYZED에서만 된다. 추천과 다른 선택지도 고를 수 있고 제외된 선택지는 409 OPTION_EXCLUDED. 확정하면 입력과 답변을 고칠 수 없다.
+         */
         post: operations["finalizeChoice"];
         delete?: never;
         options?: never;
@@ -212,6 +260,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * 49. 결정 복제
+         * @description 선택지·기준·값·조건을 그대로 복사해 DRAFT 상태의 새 결정을 만든다. 답변과 분석 결과는 복사하지 않는다.
+         */
         post: operations["duplicate"];
         delete?: never;
         options?: never;
@@ -226,8 +278,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * 20. 평가 기준 조회
+         * @description 평가 기준 목록.
+         */
         get: operations["criteria"];
         put?: never;
+        /**
+         * 19. 평가 기준 추가
+         * @description 기준을 추가한다(2~7개, 이름 중복 불가). type은 numeric·rating·boolean. 질문 중에 추가하면 상태 전환(statusChanged)이 올 수 있다.
+         */
         post: operations["criterion"];
         delete?: never;
         options?: never;
@@ -244,6 +304,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * 23. 평가 기준 추천 (AI)
+         * @description AI가 기준을 추천한다. 상한을 넘거나 AI가 실패하면 카테고리별 기본 기준 목록(source=template)을 대신 준다.
+         */
         post: operations["recommendCriteria"];
         delete?: never;
         options?: never;
@@ -276,12 +340,24 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * 11. 결정 상세 조회
+         * @description 결정 하나의 선택지·기준·값·순위·필수 조건·준비 상태(readiness)를 한 번에 돌려준다.
+         */
         get: operations["detail"];
         put?: never;
         post?: never;
+        /**
+         * 13. 결정 삭제
+         * @description 결정을 삭제한다(목록과 상세에서 사라지는 소프트 삭제).
+         */
         delete: operations["delete"];
         options?: never;
         head?: never;
+        /**
+         * 12. 결정 수정
+         * @description 제목·설명·카테고리를 바꾼다. 확정(FINALIZED)된 결정은 409 DECISION_FINALIZED.
+         */
         patch: operations["patch"];
         trace?: never;
     };
@@ -295,9 +371,17 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
+        /**
+         * 17. 선택지 삭제
+         * @description 선택지와 그 값을 지운다. 2개 미만이 되면 질문을 시작할 수 없다.
+         */
         delete: operations["deleteOption"];
         options?: never;
         head?: never;
+        /**
+         * 16. 선택지 수정
+         * @description 이름·설명·URL을 바꾼다.
+         */
         patch: operations["patchOption"];
         trace?: never;
     };
@@ -311,9 +395,17 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
+        /**
+         * 22. 평가 기준 삭제
+         * @description 기준을 지운다. 그 기준이 들어간 답변은 무효 처리되고 무효 처리된 수가 돌아온다.
+         */
         delete: operations["deleteCriterion"];
         options?: never;
         head?: never;
+        /**
+         * 21. 평가 기준 수정
+         * @description 이름·방향·단위·단계 라벨·입력 방식(inputMode)·척도를 바꾼다. 답변한 뒤 척도를 바꾸면 warning이 온다.
+         */
         patch: operations["patchCriterion"];
         trace?: never;
     };
@@ -477,7 +569,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 결정 분석 결과를 Markdown 파일로 내보내기 */
+        /**
+         * 48. 결정 결과 내보내기
+         * @description ANALYZED·FINALIZED에서만 된다(그 외 422 NOT_READY). format은 md만 지원하고 파일(decision-ID.md)로 내려준다.
+         */
         get: operations["exportDecision"];
         put?: never;
         post?: never;
@@ -528,6 +623,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * 0. 헬스 체크
+         * @description 서버가 DB에 연결할 수 있으면 200, 아니면 503. X-Client-Id 헤더가 필요 없다.
+         */
         get: operations["health"];
         put?: never;
         post?: never;
@@ -1190,16 +1289,21 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1208,7 +1312,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.Responses.Values"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1225,7 +1329,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -1242,7 +1346,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -1259,7 +1363,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -1276,7 +1380,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1293,7 +1397,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -1310,7 +1414,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1327,7 +1431,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -1344,7 +1448,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -1361,7 +1465,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -1384,9 +1488,14 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
@@ -1397,7 +1506,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1406,7 +1515,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.Responses.Values"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1423,7 +1532,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -1440,7 +1549,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -1457,7 +1566,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -1474,7 +1583,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1491,7 +1600,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -1508,7 +1617,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1525,7 +1634,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -1542,7 +1651,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -1559,7 +1668,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -1582,16 +1691,21 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1600,7 +1714,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.Responses.Conditions"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1617,7 +1731,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -1634,7 +1748,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -1651,7 +1765,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -1668,7 +1782,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1685,7 +1799,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -1702,7 +1816,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1719,7 +1833,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -1736,7 +1850,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -1753,7 +1867,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -1776,9 +1890,14 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
@@ -1789,7 +1908,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1798,7 +1917,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.Responses.Conditions"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1815,7 +1934,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -1832,7 +1951,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -1849,7 +1968,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -1866,7 +1985,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1883,7 +2002,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -1900,7 +2019,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1917,7 +2036,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -1934,7 +2053,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -1951,7 +2070,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -1978,6 +2097,10 @@ export interface operations {
                 limit?: number;
             };
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path?: never;
@@ -1985,7 +2108,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1994,7 +2117,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.Responses.Decisions"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -2011,7 +2134,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -2028,7 +2151,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -2045,7 +2168,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -2062,7 +2185,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -2079,7 +2202,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -2096,7 +2219,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -2113,7 +2236,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -2130,7 +2253,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -2147,7 +2270,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -2170,6 +2293,10 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path?: never;
@@ -2181,7 +2308,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Created */
+            /** @description 생성됨 */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -2190,7 +2317,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.Responses.CreatedDecision"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -2207,7 +2334,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -2224,7 +2351,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -2241,7 +2368,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -2258,7 +2385,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -2275,7 +2402,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -2292,7 +2419,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -2309,7 +2436,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -2326,7 +2453,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -2343,7 +2470,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -2366,9 +2493,14 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
@@ -2379,7 +2511,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2388,7 +2520,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.AnalysisDtos.SimulationResponse"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -2405,7 +2537,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -2422,7 +2554,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -2439,7 +2571,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -2456,7 +2588,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -2473,7 +2605,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -2490,7 +2622,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -2507,7 +2639,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -2524,7 +2656,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -2541,7 +2673,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -2564,16 +2696,21 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2582,7 +2719,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.QuestionDtos.StopResponse"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -2599,7 +2736,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -2616,7 +2753,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -2633,7 +2770,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -2650,7 +2787,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -2667,7 +2804,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -2684,7 +2821,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -2701,7 +2838,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -2718,7 +2855,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -2735,7 +2872,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -2758,16 +2895,21 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2776,7 +2918,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.QuestionDtos.StartQuestionsResponse"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -2793,7 +2935,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -2810,7 +2952,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -2827,7 +2969,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -2844,7 +2986,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -2861,7 +3003,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -2878,7 +3020,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -2895,7 +3037,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -2912,7 +3054,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -2929,7 +3071,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -2952,16 +3094,21 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2970,7 +3117,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.Responses.Options"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -2987,7 +3134,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -3004,7 +3151,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -3021,7 +3168,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -3038,7 +3185,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -3055,7 +3202,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -3072,7 +3219,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -3089,7 +3236,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -3106,7 +3253,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -3123,7 +3270,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -3146,9 +3293,14 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
@@ -3159,7 +3311,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Created */
+            /** @description 생성됨 */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -3168,7 +3320,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.Responses.Option"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -3185,7 +3337,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -3202,7 +3354,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -3219,7 +3371,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -3236,7 +3388,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -3253,7 +3405,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -3270,7 +3422,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -3287,7 +3439,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -3304,7 +3456,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -3321,7 +3473,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -3344,9 +3496,14 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
@@ -3357,7 +3514,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3366,7 +3523,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.Responses.OptionRecommendations"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -3383,7 +3540,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -3400,7 +3557,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -3417,7 +3574,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -3434,7 +3591,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -3451,7 +3608,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -3468,7 +3625,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -3485,7 +3642,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -3502,7 +3659,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -3519,7 +3676,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -3544,9 +3701,14 @@ export interface operations {
                 clientId: string;
             };
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
@@ -3557,7 +3719,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Created */
+            /** @description 생성됨 */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -3566,7 +3728,7 @@ export interface operations {
                     "*/*": components["schemas"]["com.seonbi.dto.CResponses.ExtractInput"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -3583,7 +3745,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -3600,7 +3762,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -3617,7 +3779,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -3634,7 +3796,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -3651,7 +3813,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -3668,7 +3830,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -3685,7 +3847,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -3702,7 +3864,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -3719,7 +3881,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -3744,17 +3906,23 @@ export interface operations {
                 clientId: string;
             };
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
+                /** @description 자유 입력 ID (UUID) */
                 inputId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3763,7 +3931,7 @@ export interface operations {
                     "*/*": components["schemas"]["com.seonbi.dto.CResponses.RejectInput"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -3780,7 +3948,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -3797,7 +3965,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -3814,7 +3982,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -3831,7 +3999,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -3848,7 +4016,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -3865,7 +4033,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -3882,7 +4050,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -3899,7 +4067,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -3916,7 +4084,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -3941,10 +4109,16 @@ export interface operations {
                 clientId: string;
             };
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
+                /** @description 자유 입력 ID (UUID) */
                 inputId: string;
             };
             cookie?: never;
@@ -3955,7 +4129,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3964,7 +4138,7 @@ export interface operations {
                     "*/*": components["schemas"]["com.seonbi.dto.CResponses.ConfirmInput"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -3981,7 +4155,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -3998,7 +4172,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -4015,7 +4189,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -4032,7 +4206,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -4049,7 +4223,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -4066,7 +4240,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -4083,7 +4257,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -4100,7 +4274,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -4117,7 +4291,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -4142,9 +4316,14 @@ export interface operations {
                 clientId: string;
             };
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
@@ -4155,7 +4334,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Created */
+            /** @description 생성됨 */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -4164,7 +4343,7 @@ export interface operations {
                     "*/*": components["schemas"]["com.seonbi.dto.CResponses.FinalChoice"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -4181,7 +4360,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -4198,7 +4377,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -4215,7 +4394,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -4232,7 +4411,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -4249,7 +4428,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -4266,7 +4445,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -4283,7 +4462,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -4300,7 +4479,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -4317,7 +4496,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -4340,9 +4519,14 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
@@ -4353,7 +4537,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Created */
+            /** @description 생성됨 */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -4362,7 +4546,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.Responses.Decision"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -4379,7 +4563,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -4396,7 +4580,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -4413,7 +4597,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -4430,7 +4614,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -4447,7 +4631,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -4464,7 +4648,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -4481,7 +4665,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -4498,7 +4682,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -4515,7 +4699,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -4538,16 +4722,21 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4556,7 +4745,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.Responses.Criteria"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -4573,7 +4762,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -4590,7 +4779,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -4607,7 +4796,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -4624,7 +4813,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -4641,7 +4830,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -4658,7 +4847,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -4675,7 +4864,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -4692,7 +4881,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -4709,7 +4898,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -4732,9 +4921,14 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
@@ -4745,7 +4939,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Created */
+            /** @description 생성됨 */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -4754,7 +4948,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.Responses.Criterion"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -4771,7 +4965,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -4788,7 +4982,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -4805,7 +4999,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -4822,7 +5016,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -4839,7 +5033,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -4856,7 +5050,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -4873,7 +5067,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -4890,7 +5084,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -4907,7 +5101,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -4930,16 +5124,21 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4948,7 +5147,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.Responses.CriterionRecommendations"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -4965,7 +5164,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -4982,7 +5181,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -4999,7 +5198,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -5016,7 +5215,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -5033,7 +5232,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -5050,7 +5249,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -5067,7 +5266,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -5084,7 +5283,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -5101,7 +5300,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -5124,16 +5323,21 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5142,7 +5346,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.QuestionDtos.AnswerListResponse"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -5159,7 +5363,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -5176,7 +5380,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -5193,7 +5397,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -5210,7 +5414,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -5227,7 +5431,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -5244,7 +5448,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -5261,7 +5465,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -5278,7 +5482,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -5295,7 +5499,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -5318,9 +5522,14 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
@@ -5331,7 +5540,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Created */
+            /** @description 생성됨 */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -5340,7 +5549,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.AnswerDtos.SubmitAnswerResponse"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -5357,7 +5566,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -5374,7 +5583,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -5391,7 +5600,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -5408,7 +5617,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -5425,7 +5634,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -5442,7 +5651,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -5459,7 +5668,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -5476,7 +5685,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -5493,7 +5702,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -5516,16 +5725,21 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5534,7 +5748,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.Responses.Decision"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -5551,7 +5765,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -5568,7 +5782,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -5585,7 +5799,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -5602,7 +5816,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -5619,7 +5833,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -5636,7 +5850,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -5653,7 +5867,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -5670,7 +5884,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -5687,7 +5901,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -5710,23 +5924,28 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description No Content */
+            /** @description 성공 (응답 본문 없음) */
             204: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -5743,7 +5962,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -5760,7 +5979,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -5777,7 +5996,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -5794,7 +6013,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -5811,7 +6030,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -5828,7 +6047,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -5845,7 +6064,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -5862,7 +6081,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -5879,7 +6098,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -5902,9 +6121,14 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
@@ -5915,7 +6139,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5924,7 +6148,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.Responses.Decision"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -5941,7 +6165,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -5958,7 +6182,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -5975,7 +6199,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -5992,7 +6216,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -6009,7 +6233,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -6026,7 +6250,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -6043,7 +6267,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -6060,7 +6284,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -6077,7 +6301,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -6100,24 +6324,30 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
+                /** @description 선택지 ID (UUID) */
                 optionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description No Content */
+            /** @description 성공 (응답 본문 없음) */
             204: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -6134,7 +6364,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -6151,7 +6381,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -6168,7 +6398,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -6185,7 +6415,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -6202,7 +6432,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -6219,7 +6449,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -6236,7 +6466,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -6253,7 +6483,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -6270,7 +6500,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -6293,10 +6523,16 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
+                /** @description 선택지 ID (UUID) */
                 optionId: string;
             };
             cookie?: never;
@@ -6307,7 +6543,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -6316,7 +6552,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.Responses.Option"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -6333,7 +6569,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -6350,7 +6586,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -6367,7 +6603,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -6384,7 +6620,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -6401,7 +6637,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -6418,7 +6654,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -6435,7 +6671,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -6452,7 +6688,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -6469,7 +6705,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -6492,17 +6728,23 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
+                /** @description 평가 기준 ID (UUID) */
                 criterionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -6511,7 +6753,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.Responses.DeletedCriterion"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -6528,7 +6770,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -6545,7 +6787,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -6562,7 +6804,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -6579,7 +6821,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -6596,7 +6838,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -6613,7 +6855,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -6630,7 +6872,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -6647,7 +6889,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -6664,7 +6906,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -6687,10 +6929,16 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
+                /** @description 평가 기준 ID (UUID) */
                 criterionId: string;
             };
             cookie?: never;
@@ -6701,7 +6949,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -6710,7 +6958,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.Responses.Criterion"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -6727,7 +6975,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -6744,7 +6992,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -6761,7 +7009,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -6778,7 +7026,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -6795,7 +7043,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -6812,7 +7060,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -6829,7 +7077,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -6846,7 +7094,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -6863,7 +7111,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -6886,10 +7134,16 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
+                /** @description 답변 ID (UUID) */
                 answerId: string;
             };
             cookie?: never;
@@ -6900,7 +7154,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -6909,7 +7163,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.AnswerDtos.EditAnswerResponse"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -6926,7 +7180,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -6943,7 +7197,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -6960,7 +7214,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -6977,7 +7231,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -6994,7 +7248,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -7011,7 +7265,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -7028,7 +7282,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -7045,7 +7299,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -7062,7 +7316,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -7085,16 +7339,21 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -7103,7 +7362,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.AnalysisDtos.WeightsResponse"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -7120,7 +7379,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -7137,7 +7396,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -7154,7 +7413,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -7171,7 +7430,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -7188,7 +7447,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -7205,7 +7464,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -7222,7 +7481,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -7239,7 +7498,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -7256,7 +7515,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -7279,16 +7538,21 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -7297,7 +7561,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.AnalysisDtos.StabilityResponse"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -7314,7 +7578,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -7331,7 +7595,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -7348,7 +7612,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -7365,7 +7629,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -7382,7 +7646,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -7399,7 +7663,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -7416,7 +7680,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -7433,7 +7697,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -7450,7 +7714,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -7475,16 +7739,21 @@ export interface operations {
                 criterionId?: string;
             };
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -7493,7 +7762,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.AnalysisDtos.SensitivityResponse"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -7510,7 +7779,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -7527,7 +7796,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -7544,7 +7813,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -7561,7 +7830,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -7578,7 +7847,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -7595,7 +7864,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -7612,7 +7881,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -7629,7 +7898,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -7646,7 +7915,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -7669,16 +7938,21 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -7687,7 +7961,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.AnalysisDtos.ScoresResponse"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -7704,7 +7978,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -7721,7 +7995,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -7738,7 +8012,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -7755,7 +8029,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -7772,7 +8046,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -7789,7 +8063,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -7806,7 +8080,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -7823,7 +8097,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -7840,7 +8114,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -7863,16 +8137,21 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -7881,7 +8160,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.AnalysisDtos.RankingsResponse"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -7898,7 +8177,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -7915,7 +8194,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -7932,7 +8211,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -7949,7 +8228,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -7966,7 +8245,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -7983,7 +8262,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -8000,7 +8279,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -8017,7 +8296,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -8034,7 +8313,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -8057,16 +8336,21 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -8075,7 +8359,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.QuestionDtos.StatusResponse"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -8092,7 +8376,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -8109,7 +8393,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -8126,7 +8410,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -8143,7 +8427,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -8160,7 +8444,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -8177,7 +8461,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -8194,7 +8478,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -8211,7 +8495,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -8228,7 +8512,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -8251,16 +8535,21 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -8269,7 +8558,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.QuestionDtos.ProgressResponse"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -8286,7 +8575,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -8303,7 +8592,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -8320,7 +8609,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -8337,7 +8626,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -8354,7 +8643,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -8371,7 +8660,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -8388,7 +8677,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -8405,7 +8694,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -8422,7 +8711,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -8445,16 +8734,21 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -8463,7 +8757,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.QuestionDtos.NextQuestionContinue"] | components["schemas"]["com.seonbi.dto.QuestionDtos.NextQuestionDone"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -8480,7 +8774,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -8497,7 +8791,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -8514,7 +8808,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -8531,7 +8825,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -8548,7 +8842,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -8565,7 +8859,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -8582,7 +8876,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -8599,7 +8893,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -8616,7 +8910,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -8642,16 +8936,21 @@ export interface operations {
                 format?: string;
             };
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -8660,7 +8959,7 @@ export interface operations {
                     "*/*": string;
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -8677,7 +8976,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -8694,7 +8993,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -8711,7 +9010,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -8728,7 +9027,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -8745,7 +9044,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -8762,7 +9061,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -8779,7 +9078,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -8796,7 +9095,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -8813,7 +9112,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -8836,16 +9135,21 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -8854,7 +9158,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.AnalysisDtos.ChangeConditionsResponse"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -8871,7 +9175,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -8888,7 +9192,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -8905,7 +9209,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -8922,7 +9226,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -8939,7 +9243,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -8956,7 +9260,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -8973,7 +9277,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -8990,7 +9294,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -9007,7 +9311,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -9030,16 +9334,21 @@ export interface operations {
         parameters: {
             query?: never;
             header: {
+                /**
+                 * @description 방문자를 구분하는 UUID. 브라우저가 처음 한 번 만들어 계속 보낸다(로그인 없음). 직접 시험할 때는 아무 UUID나 넣으면 된다.
+                 * @example 3f2b8c1e-5a7d-4e9a-8b1c-2d3e4f5a6b7c
+                 */
                 "X-Client-Id": string;
             };
             path: {
+                /** @description 결정 ID (UUID) */
                 decisionId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -9048,7 +9357,7 @@ export interface operations {
                     "application/json": components["schemas"]["com.seonbi.dto.AnalysisDtos.AnalysisResponse"];
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 요청 형식이나 값이 올바르지 않음 (VALIDATION_ERROR, CLIENT_ID_REQUIRED) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -9065,7 +9374,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 결정·선택지·기준 등을 찾을 수 없음 (NOT_FOUND) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -9082,7 +9391,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 이 경로에서 지원하지 않는 HTTP 메서드 */
             405: {
                 headers: {
                     [name: string]: unknown;
@@ -9099,7 +9408,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 응답 형식(Accept) */
             406: {
                 headers: {
                     [name: string]: unknown;
@@ -9116,7 +9425,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 상태 충돌·개수 제한 (DECISION_FINALIZED, INVALID_STATE, LIMIT_EXCEEDED 등) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -9133,7 +9442,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지원하지 않는 요청 형식(Content-Type) */
             415: {
                 headers: {
                     [name: string]: unknown;
@@ -9150,7 +9459,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 지금은 처리할 수 없음 (NOT_READY: 값 미입력 등, IRRELEVANT_INPUT) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -9167,7 +9476,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 일일 호출 상한 초과 (AI_QUOTA_EXCEEDED) */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -9184,7 +9493,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description 예상하지 못한 서버 오류 (INTERNAL_ERROR) */
             500: {
                 headers: {
                     [name: string]: unknown;
@@ -9201,7 +9510,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description 공통 오류 형식 */
+            /** @description AI 또는 DB를 지금 쓸 수 없음 (AI_UNAVAILABLE 등) */
             503: {
                 headers: {
                     [name: string]: unknown;

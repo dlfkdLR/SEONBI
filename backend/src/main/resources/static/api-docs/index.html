@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>선비 API 문서</title>
+  <link rel="stylesheet" href="/swagger-ui/swagger-ui.css" />
+  <style>
+    body { margin: 0; background: #fafafa; }
+    .ko-header { background: #1f1f1f; color: #fff; padding: 14px 24px; font: 600 16px/1.4 -apple-system, "Noto Sans KR", sans-serif; }
+    .ko-header small { font-weight: 400; opacity: .7; margin-left: 12px; }
+    .swagger-ui .topbar { display: none; }
+  </style>
+</head>
+<body>
+  <div class="ko-header">선비 API 문서<small>기획서 7장의 API 번호 기준 · 영어 화면(<a style="color:#9cf" href="/swagger-ui/index.html">기본 Swagger UI</a>)도 쓸 수 있습니다</small></div>
+  <div id="swagger-ui"></div>
+  <script src="/swagger-ui/swagger-ui-bundle.js"></script>
+  <script src="/swagger-ui/swagger-ui-standalone-preset.js"></script>
+  <script>
+    // Swagger UI 화면의 영어 문구를 한국어로 바꾸는 사전. 서버가 주는 문서 내용(요약·설명)은 이미 한국어다.
+    const DICT = {
+      "Servers": "서버", "Authorize": "인증", "Available authorizations": "사용 가능한 인증",
+      "Parameters": "매개변수", "Name": "이름", "Description": "설명", "Try it out": "직접 시험하기",
+      "Cancel": "취소", "Execute": "실행", "Clear": "지우기", "Reset": "되돌리기",
+      "Responses": "응답", "Response content type": "응답 형식", "Request body": "요청 본문",
+      "Code": "코드", "Details": "상세", "Links": "링크", "No links": "링크 없음",
+      "Media type": "미디어 타입", "Example Value": "예시 값", "Schema": "스키마", "Model": "모델", "Example": "예시",
+      "Server response": "서버 응답", "Request URL": "요청 주소", "Curl": "Curl 명령", "Response body": "응답 본문",
+      "Response headers": "응답 헤더", "Download": "내려받기", "Copy": "복사", "No parameters": "매개변수 없음",
+      "Controls Accept header.": "Accept 헤더를 정합니다.", "Parameter content type": "요청 형식",
+      "Schemas": "스키마 목록", "required": "필수", "Loading...": "불러오는 중…", "Edit Value": "값 편집",
+      "Successful response": "성공", "Default": "기본", "Expand all": "모두 펼치기", "Collapse all": "모두 접기",
+      "Filter by tag": "태그로 거르기", "Show": "보기", "Hide": "숨기기", "Close": "닫기", "Terms of service": "이용 약관",
+      "No content": "내용 없음", "Operations": "동작", "Select a definition": "문서 선택",
+      "Possible values": "가능한 값", "Available values": "가능한 값", "Example Description": "예시 설명",
+      "Send empty value": "빈 값 보내기", "Add string item": "문자열 항목 추가", "Add item": "항목 추가",
+      "Authorized": "인증됨", "Logout": "로그아웃", "Disable": "끄기", "Enable": "켜기",
+      "Server variables": "서버 변수", "Computed URL": "계산된 주소", "Expand operation": "펼치기", "Collapse operation": "접기"
+    };
+    const translateNode = (root) => {
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      const nodes = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode);
+      for (const n of nodes) {
+        const t = n.nodeValue.trim();
+        if (t && DICT[t] !== undefined) n.nodeValue = n.nodeValue.replace(t, DICT[t]);
+      }
+      root.querySelectorAll && root.querySelectorAll("[placeholder],[title]").forEach((el) => {
+        for (const a of ["placeholder", "title"]) {
+          const v = el.getAttribute(a);
+          if (v && DICT[v]) el.setAttribute(a, DICT[v]);
+        }
+      });
+    };
+    window.onload = () => {
+      window.ui = SwaggerUIBundle({
+        url: "/v3/api-docs",
+        dom_id: "#swagger-ui",
+        deepLinking: true,
+        docExpansion: "none",
+        displayRequestDuration: true,
+        defaultModelsExpandDepth: 0,
+        filter: true,
+        presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+        layout: "BaseLayout",
+      });
+      const root = document.getElementById("swagger-ui");
+      new MutationObserver((mutations) => {
+        for (const m of mutations) {
+          if (m.type === "characterData") { translateNode(m.target.parentNode); continue; }
+          m.addedNodes.forEach((n) => translateNode(n.nodeType === 1 ? n : n.parentNode));
+        }
+      }).observe(root, { childList: true, subtree: true, characterData: true });
+      translateNode(root);
+    };
+  </script>
+</body>
+</html>
