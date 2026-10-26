@@ -13,6 +13,7 @@ import com.seonbi.dto.AnalysisDtos.StabilityResponse;
 import com.seonbi.dto.AnalysisDtos.WeightsResponse;
 import com.seonbi.service.AnalysisService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
  * 분석 API 39~46번 (개발기획서 7.2·7.3 "분석"). 계산은 모두 {@link AnalysisService}에 있고, 여기서는 응답 record(7.3)로 바꾸는
  * 일만 한다. 서비스가 만든 맵이 7.3 키와 다르면 변환에서 실패해 계약 위반이 바로 드러난다.
  */
+@Tag(name = "분석", description = "가중치·순위·안정성·전환 조건·시뮬레이션 (39~46번).")
 @RestController
 @RequestMapping(value = "/api/v1/decisions/{decisionId}", produces = "application/json")
 public class AnalysisController {

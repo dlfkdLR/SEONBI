@@ -8,6 +8,7 @@ import com.seonbi.dto.CResponses;
 import com.seonbi.service.ExportService;
 import com.seonbi.service.FinalizeService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.Map;
 import java.util.UUID;
@@ -15,6 +16,7 @@ import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
 /** 최종 선택 47번과 내보내기 48번. 처리는 {@link FinalizeService}·{@link ExportService}가 한다. */
+@Tag(name = "결과 확정·내보내기", description = "최종 선택을 확정하고 결과를 Markdown으로 내보낸다 (47·48번).")
 @RestController
 @RequestMapping("/api/v1/decisions/{decisionId}")
 public class ResultController {
@@ -31,7 +33,11 @@ public class ResultController {
 
   @PostMapping("/final-choice")
   @ResponseStatus(HttpStatus.CREATED)
-  @Operation(operationId = "finalizeChoice", summary = "최종 선택 확정")
+  @Operation(
+      operationId = "finalizeChoice",
+      summary = "47. 최종 선택 확정",
+      description =
+          "ANALYZED에서만 된다. 추천과 다른 선택지도 고를 수 있고 제외된 선택지는 409 OPTION_EXCLUDED. 확정하면 입력과 답변을 고칠 수 없다.")
   public CResponses.FinalChoice finalizeChoice(
       @ClientId UUID clientId,
       @PathVariable UUID decisionId,
@@ -42,7 +48,11 @@ public class ResultController {
   }
 
   @GetMapping("/export")
-  @Operation(operationId = "exportDecision", summary = "결정 분석 결과를 Markdown 파일로 내보내기")
+  @Operation(
+      operationId = "exportDecision",
+      summary = "48. 결정 결과 내보내기",
+      description =
+          "ANALYZED·FINALIZED에서만 된다(그 외 422 NOT_READY). format은 md만 지원하고 파일(decision-ID.md)로 내려준다.")
   public ResponseEntity<String> export(
       @ClientId UUID clientId,
       @PathVariable UUID decisionId,

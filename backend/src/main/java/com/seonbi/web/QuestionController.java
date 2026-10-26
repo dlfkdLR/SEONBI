@@ -20,6 +20,7 @@ import com.seonbi.dto.QuestionDtos.StopResponse;
 import com.seonbi.service.QuestionFlowService;
 import com.seonbi.service.QuestionPhrasing;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.Map;
 import java.util.UUID;
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.*;
  * 질문·답변 API 31~38번 (개발기획서 7.2·7.3 "질문·답변"). 상태·검증 로직은 모두 {@link QuestionFlowService}에 있고, 여기서는 요청을
  * 받아 응답 record(7.3)로 바꾸는 일만 한다. 서비스가 만든 맵이 7.3 키와 다르면 변환에서 실패해 계약 위반이 바로 드러난다.
  */
+@Tag(name = "질문·답변", description = "엔진이 고른 질문을 하나씩 받아 답한다 (31~38번).")
 @RestController
 @RequestMapping(value = "/api/v1/decisions/{decisionId}", produces = "application/json")
 public class QuestionController {

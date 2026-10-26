@@ -17,3 +17,6 @@ springdoc:
   use-fqn: true
   swagger-ui:
     path: /swagger-ui
+    doc-expansion: none # 처음에는 태그만 보이고 눌러서 펼친다
+    display-request-duration: true
+    default-models-expand-depth: 0
