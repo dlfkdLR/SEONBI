@@ -22,6 +22,8 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/seonbi
       SPRING_DATASOURCE_USERNAME: seonbi
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD 를 설정하세요}
+      # 운영 기존 DB의 최초 이관 때만 true로 배포하고, 확인 후 바로 false로 되돌린다.
+      FLYWAY_BASELINE_ON_MIGRATE: ${FLYWAY_BASELINE_ON_MIGRATE:-false}
       LLM_MODEL_FAST: ${LLM_MODEL_FAST:-fake:default}
       LLM_MODEL_QUALITY: ${LLM_MODEL_QUALITY:-fake:default}
       LLM_FALLBACK_MODELS: ${LLM_FALLBACK_MODELS:-}

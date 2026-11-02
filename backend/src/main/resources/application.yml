@@ -17,9 +17,9 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
-    # 이미 테이블이 있는데 이력(flyway_schema_history)이 없는 DB는 일부러 시작을 막는다.
-    # 기존 DB는 docs/데이터베이스-마이그레이션.md 의 절차로 스키마가 V1과 같은지 확인한 뒤 수동으로 baseline 한다
-    baseline-on-migrate: false
+    # 기존 DB는 기본적으로 시작을 막는다. 검토한 운영 DB를 처음 이관할 때만 환경변수로 한 번 켠다.
+    baseline-on-migrate: ${FLYWAY_BASELINE_ON_MIGRATE:false}
+    baseline-version: 1
     validate-on-migrate: true # 적용한 마이그레이션 파일이 바뀌었으면(체크섬 불일치) 시작하지 않는다
     out-of-order: false
     clean-disabled: true # flyway clean(모든 객체 삭제)은 쓸 수 없게 막는다
