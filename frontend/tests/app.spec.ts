@@ -12,7 +12,8 @@ test('처음 방문한 사용자가 단계별 입력부터 서버 분석·확정
   expect(server.calls.some(c => c.method === 'POST')).toBe(false);
   await page.getByLabel('후보 1', { exact: true }).fill('개발 동아리'); await page.getByLabel('후보 2', { exact: true }).fill('사진 동아리');
   await page.getByRole('button', { name: '비교할 항목 고르기', exact: true }).click();
-  await expect(page).toHaveURL(/server-decision-1\/setup\/3/);
+  // 초기 설정 중에는 결정 ID가 없고 서버에도 아무것도 만들지 않는다
+  await expect(page).toHaveURL(/decisions\/new\/setup\/3/);
   await page.getByRole('button', { name: '흥미 비교 항목' }).click(); await page.getByRole('button', { name: '성장 비교 항목' }).click();
   await expect(page.getByRole('button', { name: '흥미 비교 항목' })).toHaveAttribute('aria-pressed', 'true');
   await page.screenshot({ path: info.outputPath('02-criteria.png'), fullPage: true, animations: 'disabled' });
@@ -41,8 +42,9 @@ test('처음 방문한 사용자가 단계별 입력부터 서버 분석·확정
   const downloaded = page.waitForEvent('download'); await page.getByRole('button', { name: 'Markdown 다운로드' }).click(); expect((await downloaded).suggestedFilename()).toBe('server-result.md'); await page.getByRole('button', { name: '닫기', exact: true }).click();
   await page.getByRole('button', { name: '복제해서 다시 고민하기' }).click(); await expect(page.getByLabel('고민 제목')).toHaveValue('내 동아리 결정 (복사본)');
   expect(server.calls.some(c => c.method === 'POST' && c.path.endsWith('/criteria/recommendations'))).toBe(true);
-  expect(server.calls.find(c => c.method === 'PUT' && c.path.endsWith('/values'))?.body.items).toHaveLength(4);
-  expect(server.calls.some(c => c.method === 'PUT' && c.path.endsWith('/conditions'))).toBe(true);
+  // 값과 조건은 개별 API가 아니라 초기 설정 저장 요청 한 번에 들어 있다
+  expect(server.calls.find(c => c.path.endsWith('/decisions/setup'))?.body.values).toHaveLength(4);
+  expect(server.calls.some(c => c.method === 'PUT' && (c.path.endsWith('/values') || c.path.endsWith('/conditions')))).toBe(false);
 });
 
 test('내 결정이 있으면 예시를 숨기고 마지막 삭제 후 예시 하나를 다시 표시한다', async ({ page }) => {

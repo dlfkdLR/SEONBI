@@ -15,5 +15,9 @@ public final class ConfigurationHooks {
     Map<String, Object> criteria(Decision decision);
 
     Map<String, Object> options(Decision decision, int count);
+
+    /** 결정이 아직 DB에 없는 초기 설정 단계의 기준 추천. 아무것도 저장하지 않는다. */
+    Map<String, Object> criteriaDraft(
+        UUID clientId, String title, String category, String purpose, List<String> optionNames);
   }
 }

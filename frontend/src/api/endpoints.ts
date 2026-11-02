@@ -15,6 +15,10 @@ export const endpoints = {
 
   listDecisions: { method: 'GET', path: '/api/v1/decisions' },
   createDecision: { method: 'POST', path: '/api/v1/decisions' },
+  /** 9-1번: 초기 설정 5단계를 끝낸 뒤 한 번에 저장하고 결정 ID를 처음 발급받는다 */
+  completeSetup: { method: 'POST', path: '/api/v1/decisions/setup' },
+  /** 9-2번: 결정을 만들기 전(초기 설정 3단계)에 기준 추천만 받는다. 저장하지 않는다 */
+  recommendCriteriaDraft: { method: 'POST', path: '/api/v1/decisions/criteria/recommendations' },
   updateDecision: { method: 'PATCH', path: '/api/v1/decisions/{decisionId}' },
   deleteDecision: { method: 'DELETE', path: '/api/v1/decisions/{decisionId}' },
   createOption: { method: 'POST', path: '/api/v1/decisions/{decisionId}/options' },

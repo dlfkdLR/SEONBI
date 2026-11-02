@@ -10,7 +10,9 @@ import org.hibernate.annotations.Check;
     name = "decisions",
     indexes = {
       @Index(columnList = "client_id, updated_at DESC"),
-      @Index(columnList = "updated_at DESC, id DESC") // 공유 목록 정렬
+      @Index(columnList = "updated_at DESC, id DESC"), // 공유 목록 정렬
+      // 초기 설정 완료 요청의 멱등 키. 같은 브라우저가 같은 키로 다시 보내면 새로 만들지 않고 만들어 둔 결정을 돌려준다
+      @Index(columnList = "client_id, setup_key", unique = true)
     })
 @Check(
     constraints =
@@ -34,6 +36,10 @@ public class Decision {
 
   @Column(name = "status", length = 20, nullable = false)
   private String status = "DRAFT";
+
+  /** 초기 설정 완료(9-1번)로 만든 결정의 멱등 키. 다른 경로로 만든 결정은 비어 있다. */
+  @Column(name = "setup_key")
+  private UUID setupKey;
 
   @Column(name = "rng_seed", nullable = false)
   private Long rngSeed = java.util.concurrent.ThreadLocalRandom.current().nextLong();
@@ -99,6 +105,14 @@ public class Decision {
 
   public void setStatus(String value) {
     this.status = value;
+  }
+
+  public UUID getSetupKey() {
+    return setupKey;
+  }
+
+  public void setSetupKey(UUID value) {
+    this.setupKey = value;
   }
 
   public Long getRngSeed() {

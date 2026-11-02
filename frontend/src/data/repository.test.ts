@@ -11,7 +11,27 @@ describe('B의 서버 DTO와 화면 입력 변환',()=>{
  it('순위 입력을 별도 rankings로 보내고 동순위를 같은 그룹에 둔다',()=>{const d=fromDto(fixture()),c=criterion('흥미','rating');c.inputMode='rank';d.criteria=[c];d.values={o1:{[c.id]:1},o2:{[c.id]:1}};expect(valuesBody(d)).toEqual({items:[],rankings:[{criterionId:c.id,order:[['o1','o2']]}]});});
  it('서버의 동순위와 boolean 원시값을 보존한다',()=>{const dto=fixture();dto.values=[{optionId:'o1',criterionId:'yes',value:false}];dto.rankings=[{criterionId:'rank',order:[['o1','o2']]}];expect(fromDto(dto).values).toEqual({o1:{yes:false,rank:1},o2:{rank:1}});});
  it('boolean은 true_better, 단계형은 higher_better로 전송한다',()=>{expect(criterionBody(criterion('기숙사','boolean'))).toMatchObject({direction:'true_better'});expect(criterionBody(criterion('적성','rating','lower_better'))).toMatchObject({direction:'higher_better'});});
- it('생성은 POST 한 번이며 서버가 발급한 ID로 바꾼다',async()=>{const d=blankDecision('owner');d.title='전공 선택';d.options=[{id:'local1',name:'컴공'},{id:'local2',name:'디자인'}];request.mockResolvedValueOnce(fixture());const saved=await repository.save(undefined,d);expect(saved.id).toBe('d');expect(saved.options.map(o=>o.id)).toEqual(['o1','o2']);expect(request).toHaveBeenCalledTimes(1);expect(request.mock.calls[0][1]).toMatchObject({body:{options:[{name:'컴공'},{name:'디자인'}]}});});
+ it('초기 설정 완료는 POST 한 번으로 모두 보내고 서버가 발급한 ID로 바꾼다',async()=>{
+  const d=blankDecision('owner');d.title='전공 선택';d.options=[{id:'local1',name:'컴공'},{id:'local2',name:'디자인'}];
+  const cost=criterion('비용','numeric','lower_better','만 원'),mood=criterion('흥미','rating');mood.inputMode='rank';d.criteria=[cost,mood];
+  d.values={local1:{[cost.id]:50,[mood.id]:1},local2:{[cost.id]:70,[mood.id]:2}};
+  d.conditions=[{id:'k1',kind:'threshold',criterionId:cost.id,operator:'<=',value:60},{id:'k2',kind:'required_tag',label:'통학 가능',satisfiedBy:['local1']}];
+  const dto={...fixture(),criteria:[{...cost,id:'sc1'},{...mood,id:'sc2'}],values:[{optionId:'o1',criterionId:'sc1',value:50},{optionId:'o2',criterionId:'sc1',value:70}],rankings:[{criterionId:'sc2',order:[['o1'],['o2']]}]};
+  request.mockResolvedValueOnce(dto);
+  const saved=await repository.complete(d,'key-1');
+  expect(saved.id).toBe('d');expect(saved.options.map(o=>o.id)).toEqual(['o1','o2']);
+  expect(request).toHaveBeenCalledTimes(1);
+  expect(request.mock.calls[0][0]).toBe('completeSetup');
+  expect(request.mock.calls[0][1]).toMatchObject({body:{setupKey:'key-1',title:'전공 선택',options:[{ref:'local1',name:'컴공'},{ref:'local2',name:'디자인'}],
+   values:[{optionRef:'local1',criterionRef:cost.id,value:50},{optionRef:'local2',criterionRef:cost.id,value:70}],rankings:[{criterionRef:mood.id,order:[['local1'],['local2']]}],
+   conditions:[{kind:'threshold',criterionRef:cost.id,operator:'<=',value:60},{kind:'required_tag',label:'통학 가능',satisfiedByRefs:['local1']}]}});
+ });
+ it('초기 설정 저장이 실패하면 예외를 내고 재시도할 수 있다',async()=>{
+  const d=blankDecision('owner');d.title='x';request.mockRejectedValueOnce(new Error('503'));
+  await expect(repository.complete(d,'key-2')).rejects.toThrow('503');
+  request.mockResolvedValueOnce(fixture());await expect(repository.complete(d,'key-2')).resolves.toMatchObject({id:'d'});
+  expect(request.mock.calls.map(c=>(c[1] as unknown as {body:{setupKey:string}}).body.setupKey)).toEqual(['key-2','key-2']);
+ });
  it('추가 행·열의 임시 ID를 서버 ID로 치환한 뒤 값과 조건을 저장한다',async()=>{const dto=fixture(),base=fromDto(dto),draft=structuredClone(base);draft.options.push({id:'temp-option',name:'경영'});const c=criterion('비용','numeric');draft.criteria.push(c);draft.values['temp-option']={[c.id]:50};draft.conditions=[{id:'temp-condition',kind:'threshold',criterionId:c.id,operator:'<=',value:60}];
  request.mockImplementation(async(name)=>name==='createOption'?{id:'new-option'}:name==='createCriterion'?{id:'new-criterion'}:name==='getDecision'?dto:{});
  await repository.save(base,draft);expect(request).toHaveBeenCalledWith('saveValues',{params:{decisionId:'d'},body:{items:[{optionId:'new-option',criterionId:'new-criterion',value:50}],rankings:[]}});expect(request).toHaveBeenCalledWith('setConditions',{params:{decisionId:'d'},body:{items:[{kind:'threshold',criterionId:'new-criterion',operator:'<=',value:60}]}});

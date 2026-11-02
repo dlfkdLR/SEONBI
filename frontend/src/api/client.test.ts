@@ -12,7 +12,7 @@ function setup(handler: (url: URL, init: RequestInit) => Promise<Response> = asy
   return { client, send };
 }
 describe('기획서 v0.5 API 계약 검증', () => {
-  it('로그인 제외 전체 42개 행과 메서드·경로가 정확히 일치한다', () => {
+  it('로그인 제외 전체 44개 행과 메서드·경로가 정확히 일치한다', () => {
     const expected = contract.map(r => `${r.method} ${r.path}`).sort();
     expect(Object.values(endpoints).map(e => `${e.method} ${e.path}`).sort()).toEqual(expected);
     expect(Object.values(endpoints).every(e => !e.path.includes('/auth/') && !e.path.includes('/users'))).toBe(true);

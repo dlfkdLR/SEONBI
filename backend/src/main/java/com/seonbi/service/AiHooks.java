@@ -121,6 +121,31 @@ public class AiHooks
 
   @Override
   @Transactional
+  public Map<String, Object> criteriaDraft(
+      UUID clientId, String title, String category, String purpose, List<String> optionNames) {
+    // DB에 넣지 않는 임시 결정: 사용량은 요청한 사람(clientId)에게만 붙고 결정 ID는 비운다
+    Decision d = new Decision();
+    d.setClientId(clientId);
+    d.setTitle(title);
+    d.setCategory(category);
+    d.setDescription(purpose);
+    if (usesFake(CallType.RECOMMEND_CRITERIA)
+        || !usage.tryReserve(Requester.of(d), "recommend_criteria")) {
+      return criteriaResult(DefaultCriteria.forCategory(category), "template");
+    }
+    List<Ref> options = new ArrayList<>();
+    for (int i = 0; i < optionNames.size(); i++) {
+      options.add(new Ref("draft-option-" + i, optionNames.get(i)));
+    }
+    CriteriaRecommendation r =
+        calls.recommendCriteria(
+            new DecisionContext(title, category, purpose, options, List.of()),
+            usage.recorder(Requester.of(d), null));
+    return criteriaResult(r.items(), r.source());
+  }
+
+  @Override
+  @Transactional
   public Map<String, Object> criteria(Decision d) {
     // 23번은 상한을 넘어도 오류 대신 기본 기준 목록을 돌려준다(12.2)
     // (실제 제공자를 설정하지 않은 로컬·테스트 환경도 같은 목록을 template으로 돌려준다)

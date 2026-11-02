@@ -3,7 +3,7 @@ import { notifyManager, QueryClient, useInfiniteQuery, useQuery, useQueryClient 
 import type { Decision } from '../domain/types';
 import { repository, rebaseDraft } from './repository';
 import { getClientId } from '../api/clientId';
-import { readNewDecisionDraft, retainNewDecisionDraft, clearNewDecisionDraft } from './new-decision-draft';
+import { readNewDecisionDraft, retainNewDecisionDraft, clearNewDecisionDraft, submitKeyFor } from './new-decision-draft';
 import { useUI } from '../lib/state';
 
 notifyManager.setScheduler(queueMicrotask);
@@ -35,23 +35,42 @@ export function useDecision(id: string) {
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
   }, [draft, id, owner]);
+  /** 서버에 이미 있는 결정의 수정을 저장한다. 새 결정(id가 new)은 complete()로만 서버에 만들어진다. */
   const save = async (override?: Decision): Promise<Decision | null> => {
-    if (!data || saving.current) return null;
+    if (!data || !query.data || id === 'new' || saving.current) return null;
     saving.current = true; setSaving(true);
     try {
       const saved = await repository.save(query.data, override ?? data);
-      if (id === 'new') clearNewDecisionDraft(owner);
       cache.setQueryData(['decision', owner, saved.id], saved); setDraft(undefined);
       await cache.invalidateQueries({ queryKey: ['decisions', owner] });
       return saved;
     } catch (error) {
       notify(error instanceof Error ? error.message : '저장하지 못했어요.');
       // Reconcile partial multi-request saves with the actual server state.
-      if (id !== 'new') { const fresh = await query.refetch(); if (fresh.data) setDraft(rebaseDraft(data, fresh.data)); }
+      const fresh = await query.refetch(); if (fresh.data) setDraft(rebaseDraft(data, fresh.data));
       return null;
     } finally { saving.current = false; setSaving(false); }
   };
-  return { ...query, data, isPending: id !== 'new' && query.isPending, update, save, isSaving, dirty: !!draft };
+  /**
+   * 초기 설정을 모두 마친 새 결정을 서버에 한 번에 저장하고 처음으로 결정 ID를 받는다. 성공했을 때만 브라우저의 임시 입력을 지우고,
+   * 실패하면 입력을 그대로 둬 다시 시도할 수 있다. 같은 내용으로 다시 보내면 서버가 같은 결정을 돌려준다(멱등 키).
+   */
+  const complete = async (override?: Decision): Promise<Decision | null> => {
+    const target = override ?? data;
+    if (!target || id !== 'new' || saving.current) return null;
+    saving.current = true; setSaving(true);
+    try {
+      const saved = await repository.complete(target, submitKeyFor(owner, target));
+      clearNewDecisionDraft(owner);
+      cache.setQueryData(['decision', owner, saved.id], saved);
+      await cache.invalidateQueries({ queryKey: ['decisions', owner] });
+      return saved;
+    } catch (error) {
+      notify(error instanceof Error ? error.message : '저장하지 못했어요.');
+      return null;
+    } finally { saving.current = false; setSaving(false); }
+  };
+  return { ...query, data, isPending: id !== 'new' && query.isPending, update, save, complete, isSaving, dirty: !!draft };
 }
 export function useAction() {
   const [busy, setBusy] = useState(false), [error,setError] = useState(''), lock = useRef(false), notify = useUI(s => s.notify), cache = useQueryClient();

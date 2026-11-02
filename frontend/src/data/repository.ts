@@ -1,5 +1,5 @@
 import { api, ApiError } from '../api/http';
-import type { DecisionDto, DecisionList, ValuesRequest, CriterionDto } from '../api/contracts';
+import type { DecisionDto, DecisionList, ValuesRequest, CriterionDto, SetupDecisionRequest } from '../api/contracts';
 import type { Decision, Criterion, Condition } from '../domain/types';
 import { defaultLevels } from '../domain/types';
 
@@ -59,6 +59,20 @@ export function valuesBody(d: Decision, ids: Map<string, string> = new Map()): V
   }
   return body;
 }
+/** 9-1번 요청 본문. 화면의 임시 ID를 ref로 쓰고, 서버가 응답에서 진짜 ID를 발급한다. */
+export function setupBody(d: Decision, setupKey: string): SetupDecisionRequest {
+  const values = valuesBody(d);
+  return {
+    setupKey, title: d.title.trim(), description: d.description, category: d.category,
+    options: d.options.map(o => ({ ref: o.id, name: o.name.trim() })),
+    criteria: d.criteria.map(c => ({ ref: c.id, ...criterionBody({ ...c, name: c.name.trim() }) })),
+    values: values.items.flatMap(v => v.value === null ? [] : [{ optionRef: v.optionId, criterionRef: v.criterionId, value: v.value }]),
+    rankings: values.rankings.map(r => ({ criterionRef: r.criterionId, order: r.order })),
+    conditions: d.conditions.map(c => c.kind === 'required_tag'
+      ? { kind: c.kind, label: c.label, satisfiedByRefs: c.satisfiedBy }
+      : { kind: c.kind, criterionRef: c.criterionId, operator: c.operator, value: c.value }),
+  };
+}
 const equal = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 export const repository = {
   async list(cursor?: string): Promise<DecisionList> {
@@ -69,23 +83,23 @@ export const repository = {
   async get(id: string): Promise<Decision> { return fromDto(await api.request('getDecision', { params: { decisionId: id } }) as DecisionDto); },
   async remove(id: string) { await api.request('deleteDecision', { params: { decisionId: id } }); },
   async duplicate(id: string): Promise<Decision> { return fromDto(await api.request('duplicateDecision', { params: { decisionId: id } }) as DecisionDto); },
+  /**
+   * 초기 설정이 끝난 새 결정을 서버에 한 번에 저장한다(9-1번). 이때 처음 결정 ID가 발급되고, 실패하면 서버에는 아무것도 남지 않는다.
+   * 같은 setupKey로 다시 보내도 결정은 하나만 생긴다.
+   */
+  async complete(draft: Decision, setupKey: string): Promise<Decision> {
+    return fromDto(await api.request('completeSetup', { body: setupBody(draft, setupKey) as never }) as DecisionDto);
+  },
   /** Forms stage edits in memory. Only successful server responses are persisted.
    * Multiple CRUD calls are not a server transaction; failures are surfaced and
    * callers refetch before retrying, so generated resources aren't duplicated.
    */
-  async save(previous: Decision | undefined, draft: Decision): Promise<Decision> {
+  async save(previous: Decision, draft: Decision): Promise<Decision> {
     const ids = new Map<string, string>();
-    let decisionId = previous?.id;
-    if (!decisionId) {
-      const created = await api.request('createDecision', { body: { title: draft.title.trim(), description: draft.description, category: draft.category, options: draft.options.map(o => ({ name: o.name.trim() })) } }) as DecisionDto;
-      decisionId = created.id;
-      if (!decisionId || !Array.isArray(created.options)) throw new ApiError(0, 'INVALID_RESPONSE', '결정 생성 응답을 확인해주세요.');
-      draft.options.forEach((o, i) => ids.set(o.id, created.options[i].id));
-      // Creation is a single write. Do not repeat POST if a later detail GET fails.
-      return fromDto({ ...created, criteria: [], values: [], rankings: [], conditions: [], readiness: { canStartQuestions: false, missing: ['CRITERIA_LT_2'] } });
-    }
+    // 서버에 아직 없는 새 결정은 여기서 만들지 않는다. 초기 설정이 끝났을 때 complete()로 한 번에 만든다
+    const decisionId = previous.id;
     const params = { decisionId };
-    const base = previous!;
+    const base = previous;
     const metadata = (d: Decision) => ({ title: d.title.trim(), description: d.description, category: d.category });
     if (!equal(metadata(base), metadata(draft))) await api.request('updateDecision', { params, body: metadata(draft) });
     for (const o of base.options) if (!draft.options.some(n => (ids.get(n.id) ?? n.id) === o.id)) await api.request('deleteOption', { params: { ...params, optionId: o.id } });

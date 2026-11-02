@@ -10,6 +10,16 @@
     "path": "/api/v1/decisions"
   },
   {
+    "number": "9-1",
+    "method": "POST",
+    "path": "/api/v1/decisions/setup"
+  },
+  {
+    "number": "9-2",
+    "method": "POST",
+    "path": "/api/v1/decisions/criteria/recommendations"
+  },
+  {
     "number": 10,
     "method": "GET",
     "path": "/api/v1/decisions"

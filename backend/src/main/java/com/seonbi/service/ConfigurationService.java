@@ -671,7 +671,11 @@ public class ConfigurationService {
   }
 
   public Map<String, Object> putValues(UUID id, UUID cid, Values r) {
-    Decision d = edit(id, cid);
+    return putValues(edit(id, cid), r);
+  }
+
+  /** 이미 잠그고 확인한 결정에 값을 저장한다. 초기 설정 완료(9-1번)도 이 경로로 값을 넣는다. */
+  public Map<String, Object> putValues(Decision d, Values r) {
     boolean noItems = r.items() == null || r.items().isEmpty();
     boolean noRankings = r.rankings() == null || r.rankings().isEmpty();
     if (noItems && noRankings) {
@@ -1013,8 +1017,28 @@ public class ConfigurationService {
       } catch (RuntimeException ignored) {
         /* Spec requires template fallback. */
       }
+    return templateCriteria(d.getCategory());
+  }
+
+  /**
+   * 9-2번. 초기 설정 3단계는 아직 결정이 없으므로 저장하지 않은 결정(DB에 넣지 않는다)을 AI 추천에만 넘긴다. 실패하면 23번처럼 카테고리별 기본 기준 목록을
+   * 준다.
+   */
+  public Map<String, Object> recommendCriteriaDraft(UUID cid, RecommendCriteriaDraft r) {
+    category(r.category());
+    var ai = recommendations.getIfAvailable();
+    if (ai != null)
+      try {
+        return ai.criteriaDraft(cid, r.title(), r.category(), r.description(), r.options());
+      } catch (RuntimeException ignored) {
+        /* 23번과 같이 기본 기준 목록으로 대신한다 */
+      }
+    return templateCriteria(r.category());
+  }
+
+  private Map<String, Object> templateCriteria(String category) {
     List<Map<String, Object>> items =
-        switch (d.getCategory()) {
+        switch (category) {
           case "purchase" ->
               List.of(
                   numeric("가격", "만 원"),

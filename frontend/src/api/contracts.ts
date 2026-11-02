@@ -11,6 +11,15 @@ export type OptionDto = Required<Pick<Schema<'com.seonbi.dto.Responses.Option'>,
 export type CriterionDto = Omit<Schema<'com.seonbi.dto.Responses.Criterion'>, 'type' | 'direction' | 'inputMode' | 'source'> & {
   id: string; name: string; type: CriterionType; direction: Direction; inputMode?: 'score' | 'rank'; source?: 'user' | 'ai_recommended' | 'free_text';
 };
+/** 9-1번 요청: 선택지·기준은 ref(임시 이름)로 서로 가리키고 서버가 진짜 ID를 발급한다. */
+export interface SetupDecisionRequest {
+  setupKey: string; title: string; description?: string; category: Category;
+  options: { ref: string; name: string }[];
+  criteria: { ref: string; name: string; type: CriterionType; direction?: Direction; unit?: string; levels?: string[]; inputMode?: 'score' | 'rank'; scaleMin?: number; scaleMax?: number; source?: 'ai_recommended' }[];
+  values: { optionRef: string; criterionRef: string; value: number | boolean }[];
+  rankings: { criterionRef: string; order: string[][] }[];
+  conditions: ({ kind: 'required_tag'; label: string; satisfiedByRefs: string[] } | { kind: 'threshold'; criterionRef: string; operator: '<=' | '>=' | '=='; value: number })[];
+}
 export type CreateDecision = Schema<'com.seonbi.dto.Requests.CreateDecision'>;
 export type ValueItem = { optionId: string; criterionId: string; value: number | boolean };
 export type RankingInput = { criterionId: string; order: string[][] };

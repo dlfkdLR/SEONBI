@@ -11,6 +11,7 @@ import type { CriterionDto } from '../api/contracts';
 import { criterion } from '../data/examples';
 import { useDecision, useOwner } from '../data/hooks';
 import { saveNewDecisionDraft } from '../data/new-decision-draft';
+import type { SetupStep } from '../data/new-decision-draft';
 import { Button, ErrorNotice, Field, Loading, Modal, PageHeading, TextButton } from '../components/ui';
 import { CriterionEditor } from '../components/criterion-editor';
 import { CriterionCard, criterionDirection } from '../components/criterion-card';
@@ -29,12 +30,16 @@ export default function SetupPage() {
   const cache = useQueryClient();
   const owner = useOwner();
   const { id = '', step: stepParam = '1' } = useParams(), step = Number(stepParam);
-  const { data: d, isPending, error, update, save, isSaving, dirty } = useDecision(id), navigate = useNavigate(), notify = useUI(s => s.notify);
+  const { data: d, isPending, error, update, save, complete, isSaving, dirty } = useDecision(id), navigate = useNavigate(), notify = useUI(s => s.notify);
   const [errors, setErrors] = useState<string[]>([]), [editing, setEditing] = useState<Criterion | 'new' | null>(null);
   const [valueIndex, setValueIndex] = useState(0), [tagOpen, setTagOpen] = useState(false), [thresholdOpen, setThresholdOpen] = useState(false);
   const [pausedConditions, setPausedConditions] = useState<Condition[]>([]), [available, setAvailable] = useState<Criterion[]>([]);
-  const suggestions = useQuery({ queryKey: ['criterion-recommendations', id], enabled: id !== 'new' && step === 3,
-    queryFn: async () => await api.request('recommendCriteria', { params: { decisionId: id } }) as { items: CriterionDto[] }, staleTime: Infinity });
+  // 아직 서버에 결정이 없는 새 결정은 제목·후보만 보내 추천을 받는다(아무것도 저장되지 않는다)
+  const draftNames = id === 'new' && d ? d.options.map(o => o.name.trim()).filter(Boolean) : [];
+  const suggestions = useQuery({ queryKey: ['criterion-recommendations', id, ...(id === 'new' && d ? [d.title.trim(), d.category, draftNames.join('|')] : [])], enabled: !!d && step === 3,
+    queryFn: async () => (id === 'new' && d
+      ? await api.request('recommendCriteriaDraft', { body: { title: d.title.trim(), description: d.description, category: d.category, options: draftNames } })
+      : await api.request('recommendCriteria', { params: { decisionId: id } })) as { items: CriterionDto[] }, staleTime: Infinity });
   useEffect(() => { setErrors([]); setValueIndex(0); }, [step]);
   useEffect(() => { setPausedConditions([]); setAvailable([]); }, [id]);
   useEffect(() => {
@@ -61,8 +66,6 @@ export default function SetupPage() {
   if (error) return <main className="page" id="main"><ErrorNotice message={error.message} /></main>;
   if (!d) return <main className="page" id="main"><PageHeading title="결정을 찾을 수 없어요." /><Link to="/decisions">공유 결정으로 돌아가기</Link></main>;
   if (![1, 2, 3, 4, 5].includes(step)) return <Navigate to={`/decisions/${id}/setup/1`} replace />;
-  // A fresh decision cannot be configured before the server has issued its ID.
-  if (id === 'new' && step > 2) return <Navigate to="/decisions/new/setup/1" replace />;
   const locked = d.status === 'FINALIZED', active = d.criteria[Math.min(valueIndex, Math.max(0, d.criteria.length - 1))];
   const path = (to: number, nextId = id) => `/decisions/${nextId}/setup/${to}`;
   const goStep = async (to: number) => {
@@ -70,7 +73,8 @@ export default function SetupPage() {
     let missing: string[] = [];
     if (to > step) missing = step === 1 ? (!d.title.trim() ? ['고민 제목을 입력해주세요.'] : []) : validationErrors(d, step - 1);
     if (missing.length) { setErrors(missing); return; }
-    if (locked || (id === 'new' && to <= 2)) { navigate(path(to)); return; }
+    // 새 결정은 마지막 단계까지 브라우저에만 보관한다. 서버에는 start()에서 한 번에 저장한다
+    if (locked || id === 'new') { navigate(path(to)); return; }
     const saved = await save();
     if (saved) navigate(path(to, saved.id));
     else setErrors(['저장하지 못했어요. 입력 내용은 그대로예요. 연결 상태를 확인한 뒤 다시 시도해주세요.']);
@@ -79,7 +83,7 @@ export default function SetupPage() {
     if (isSaving) return;
     if (!d.title.trim()) { setErrors(['고민 제목을 입력해주세요.']); return; }
     if (id === 'new') {
-      if (!saveNewDecisionDraft(owner, d, step === 2 ? 2 : 1)) {
+      if (!saveNewDecisionDraft(owner, d, step as SetupStep)) {
         setErrors(['브라우저에 저장하지 못했어요. 저장 공간과 설정을 확인해주세요.']); return;
       }
       setErrors([]); notify('이 브라우저에 임시 저장했어요.');
@@ -115,7 +119,9 @@ export default function SetupPage() {
     if (isSaving) return;
     const missing = validationErrors(d); if (missing.length) { setErrors(missing); return; }
     // Skipping is explicit and reversible; only active conditions reach the API.
-    const saved = await save(skip ? { ...d, conditions: [] } : undefined);
+    // 새 결정이면 여기서 처음 서버에 저장되고 결정 ID가 발급된다. 실패하면 서버에는 아무것도 남지 않고 입력은 그대로다
+    const target = skip ? { ...d, conditions: [] } : undefined;
+    const saved = await (id === 'new' ? complete(target) : save(target));
     if (!saved) { setErrors(['저장하지 못했어요. 입력 내용을 유지했으니 다시 시도해주세요.']); return; }
     if (!saved.readiness?.canStartQuestions) { setErrors(['아직 질문을 시작할 수 없어요. 후보와 비교 항목의 입력값을 확인해주세요.']); return; }
     try {
@@ -124,7 +130,11 @@ export default function SetupPage() {
       // 값이 모두 같아 물을 질문이 없으면 서버가 바로 ANALYZED로 보낸다 → 결과 화면으로
       navigate(started.status === 'ANALYZED' ? `/decisions/${saved.id}/result` : `/decisions/${saved.id}/questions`);
     }
-    catch (e) { setErrors([e instanceof Error ? e.message : '질문을 시작하지 못했어요.']); }
+    catch (e) {
+      const message = e instanceof Error ? e.message : '질문을 시작하지 못했어요.';
+      // 결정은 이미 저장됐으니 저장된 결정의 마지막 단계에서 이어서 시작할 수 있게 한다
+      if (id === 'new') { notify(`결정은 저장했어요. ${message}`); navigate(path(5, saved.id), { replace: true }); } else setErrors([message]);
+    }
   };
   const nextValue = async () => {
     if (!active) return;

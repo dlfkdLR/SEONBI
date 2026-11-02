@@ -11,9 +11,10 @@ export function analysisFixture(d: DecisionDto):AnalysisDto {
   return {provisional:false,recommendation:{optionId:'o2',name:d.options[1]?.name??'서버 추천',topProbability:.913},rankings:[{rank:1,optionId:'o2',name:d.options[1]?.name??'서버 추천',score:.731,topProbability:.913},{rank:2,optionId:'o1',name:d.options[0]?.name??'다른 선택',score:.269,topProbability:.087}],
     weights:d.criteria.map((c,i)=>({criterionId:c.id,name:c.name,mean:i?.7:.3,interval:i?[.6,.8]:[.2,.4]})),stability:{level:'HIGH',score:.913,localPerturbationKeepRate:.86,text:'서버 안정성 설명'},changeConditions:[{type:'weight',criterionId:'c1',threshold:.6,text:'서버에서 받은 전환 조건'}],hiddenPreferences:[{text:'서버에서 받은 숨은 선호'}],excludedOptions:[],explanation:{summary:'서버가 계산한 추천 근거',reasons:['서버 판단 이유'],caveats:[],source:'template'},lowConfidence:false,computedAt:'2026-10-24T00:00:00Z'};
 }
-export async function mockApi(page:Page,initial:DecisionDto[]=[]) {
+/** dropFirstSetupResponse: 9-1번을 서버가 저장한 뒤 첫 응답만 끊어 "저장은 됐는데 응답을 못 받은" 상황을 만든다. */
+export async function mockApi(page:Page,initial:DecisionDto[]=[],options:{dropFirstSetupResponse?:boolean}={}) {
   const records=new Map(initial.map(d=>[d.id,structuredClone(d)])),calls:{method:string;path:string;body:any;clientId:string|null}[]=[];
-  let answered=0,counter=0;
+  let answered=0,counter=0,dropSetup=options.dropFirstSetupResponse===true;
   function question():QuestionDto {
     return {id:`q${answered}`,seq:answered+1,type:answered===1?'slider_pair':'ab_criteria',criteria:['c1','c2'],title:answered===0?'서버가 고른 첫 질문':'서버가 고른 다음 질문',allowSkip:true,allowFreeText:true,payload:answered===1?{left:{criterionId:'c1',label:'흥미',range:'낮음~높음'},right:{criterionId:'c2',label:'성장',range:'낮음~높음'},min:-5,max:5}:{optionA:{criterionId:'c1',label:'흥미'},optionB:{criterionId:'c2',label:'성장'}}};
   }
@@ -23,6 +24,25 @@ export async function mockApi(page:Page,initial:DecisionDto[]=[]) {
     expect(clientId).toMatch(/^[0-9a-f-]{36}$/);
     if(body!==null) expect(request.headers()['content-type']).toBe('application/json');
     const send=(json:unknown,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(json)});
+    if(path==='/api/v1/decisions/criteria/recommendations'&&method==='POST'){
+      expect(Object.keys(body).sort()).toEqual(['category','description','options','title']);
+      return send({source:'template',items:[{name:'흥미',type:'rating',direction:'higher_better',inputMode:'score',levels:['낮음','보통','높음']},{name:'성장',type:'rating',direction:'higher_better',inputMode:'score',levels:['낮음','보통','높음']}]});
+    }
+    // 9-1번: 초기 설정을 한 번에 저장한다. 같은 setupKey는 새로 만들지 않고 만들어 둔 결정을 200으로 돌려준다
+    if(path==='/api/v1/decisions/setup'&&method==='POST'){
+      const prior=[...records.values()].find(x=>(x as any).setupKey===body.setupKey);
+      if(prior)return send(prior,200);
+      const d=decisionFixture() as DecisionDto&{setupKey?:string},option=new Map<string,string>(),criterion=new Map<string,string>();
+      d.setupKey=body.setupKey;d.id='server-decision-'+(++counter);d.title=body.title;d.description=body.description;d.category=body.category;
+      d.options=body.options.map((o:any,i:number)=>{option.set(o.ref,`o${i+1}`);return{id:`o${i+1}`,name:o.name,excluded:false,excludedReasons:[]};});
+      d.criteria=body.criteria.map((c:any,i:number)=>{criterion.set(c.ref,`c${i+1}`);const{ref,...rest}=c;return{...rest,id:`c${i+1}`};});
+      d.values=body.values.map((v:any)=>({optionId:option.get(v.optionRef),criterionId:criterion.get(v.criterionRef),value:v.value}));
+      d.rankings=body.rankings.map((r:any)=>({criterionId:criterion.get(r.criterionRef),order:r.order.map((g:string[])=>g.map(x=>option.get(x)))}));
+      d.conditions=body.conditions.map((c:any,i:number)=>({id:'k'+i,kind:c.kind,label:c.label,operator:c.operator,value:c.value,criterionId:c.criterionRef&&criterion.get(c.criterionRef),satisfiedBy:c.satisfiedByRefs?.map((x:string)=>option.get(x))}));
+      d.readiness={canStartQuestions:true,missing:[]};d.status='DRAFT';records.set(d.id,d);
+      if(dropSetup){dropSetup=false;return route.abort('connectionreset');}
+      return send(d,201);
+    }
     if(path==='/api/v1/decisions'){
       if(method==='GET')return send({items:[...records.values()].map(d=>({id:d.id,title:d.title,status:d.status,optionCount:d.options.length,updatedAt:d.updatedAt})),nextCursor:null});
       if(method==='POST'){
@@ -51,4 +71,14 @@ export async function mockApi(page:Page,initial:DecisionDto[]=[]) {
     return send({error:{code:'TEST_UNHANDLED',message:`미처리 계약 요청: ${method} ${tail}`}},501);
   });
   return {records,calls};
+}
+
+/** 3단계(비교 항목)부터 끝까지 채운다. 마지막 버튼은 호출하는 쪽이 누른다. 모의 서버의 추천 항목(흥미·성장)을 쓴다. */
+export async function fillFromCriteria(page:Page) {
+  await page.getByRole('button',{name:'흥미 비교 항목'}).click();await page.getByRole('button',{name:'성장 비교 항목'}).click();
+  await page.getByRole('button',{name:'후보 정보 입력하기',exact:true}).click();
+  await page.getByLabel('개발 동아리 흥미',{exact:true}).selectOption('3');await page.getByLabel('사진 동아리 흥미',{exact:true}).selectOption('1');
+  await page.getByRole('button',{name:'다음 항목',exact:true}).click();
+  await page.getByLabel('개발 동아리 성장',{exact:true}).selectOption('1');await page.getByLabel('사진 동아리 성장',{exact:true}).selectOption('3');
+  await page.getByRole('button',{name:'입력 마치기',exact:true}).click();
 }
