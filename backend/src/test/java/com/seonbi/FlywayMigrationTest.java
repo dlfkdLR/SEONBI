@@ -26,7 +26,7 @@ import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 /**
- * Flyway 마이그레이션(V1, V2...)을 실제 PostgreSQL에서 검증한다. 스프링 컨텍스트 없이 DB마다 새로 만들어서 쓰므로 서로 영향이 없다.
+ * Flyway 마이그레이션(V1, V2, V3...)을 실제 PostgreSQL에서 검증한다. 스프링 컨텍스트 없이 DB마다 새로 만들어서 쓰므로 서로 영향이 없다.
  *
  * <ul>
  *   <li>빈 DB에 모든 테이블이 만들어지고 다시 실행해도 아무 일도 일어나지 않는다
@@ -163,7 +163,7 @@ class FlywayMigrationTest {
   void 빈_DB에_모든_테이블이_만들어지고_다시_실행해도_아무것도_바뀌지_않는다() throws Exception {
     String db = newDatabase();
     var first = flyway(db).migrate();
-    assertThat(first.migrationsExecuted).isEqualTo(2);
+    assertThat(first.migrationsExecuted).isEqualTo(3);
     List<String> expected = new ArrayList<>(APP_TABLES);
     expected.add("flyway_schema_history");
     expected.sort(null);
@@ -172,7 +172,7 @@ class FlywayMigrationTest {
     var again = flyway(db).migrate(); // 재실행: 이미 적용된 것은 건너뛴다
     assertThat(again.migrationsExecuted).isZero();
     flyway(db).validate(); // 적용한 파일이 그대로인지(체크섬) 확인
-    assertThat(count(db, "select count(*) from flyway_schema_history where success")).isEqualTo(2);
+    assertThat(count(db, "select count(*) from flyway_schema_history where success")).isEqualTo(3);
   }
 
   @Test
@@ -276,7 +276,7 @@ class FlywayMigrationTest {
         .load()
         .baseline();
     var result = flyway(legacy).migrate();
-    assertThat(result.migrationsExecuted).isEqualTo(1); // V2 만
+    assertThat(result.migrationsExecuted).isEqualTo(2); // V2 와 V3
     assertThat(count(legacy, "select count(*) from decisions where id='" + id + "'")).isEqualTo(1);
     assertThat(
             count(
@@ -293,9 +293,87 @@ class FlywayMigrationTest {
         .baselineVersion("1")
         .load()
         .baseline();
-    assertThat(flyway(updated).migrate().migrationsExecuted).isEqualTo(1);
+    assertThat(flyway(updated).migrate().migrationsExecuted).isEqualTo(2);
     String fresh = newDatabase();
     flyway(fresh).migrate();
     assertThat(fingerprint(updated)).isEqualTo(fingerprint(fresh));
+  }
+
+  @Test
+  void 운영_DB의_옛_UNIQUE_이름을_V3에서_맞추고_기존_행은_보존한다() throws Exception {
+    String legacy = newDatabase();
+    Flyway.configure()
+        .dataSource(url(legacy), PG.getUsername(), PG.getPassword())
+        .locations("classpath:db/migration")
+        .target("1")
+        .load()
+        .migrate();
+    exec(legacy, "drop table flyway_schema_history"); // 이력이 없는 운영 DB를 재현한다
+    exec(
+        legacy,
+        "alter table answers rename constraint answers_question_id_key to uka8hukb7yjph7wnrlnn8x0fcja");
+    exec(
+        legacy,
+        "alter table criteria rename constraint criteria_decision_id_name_key to ukpx5c0wra34gl73qbcq2ypt4eb");
+    exec(
+        legacy,
+        "alter table options rename constraint options_decision_id_name_key to ukpq4di9st3r3vhbirsdyp97afs");
+    exec(
+        legacy,
+        "alter table questions rename constraint questions_decision_id_seq_key to uk4ykmj0m93n4gl4olovto0bcbs");
+    String id = UUID.randomUUID().toString();
+    exec(
+        legacy,
+        "insert into decisions(id,client_id,title,category,status,rng_seed,version) values('%s','%s','기존 결정','etc','DRAFT',1,1)"
+            .formatted(id, UUID.randomUUID()));
+
+    var result =
+        Flyway.configure()
+            .dataSource(url(legacy), PG.getUsername(), PG.getPassword())
+            .locations("classpath:db/migration")
+            .baselineOnMigrate(true)
+            .baselineVersion("1")
+            .load()
+            .migrate();
+    assertThat(result.migrationsExecuted).isEqualTo(2); // V2 와 V3
+    assertThat(count(legacy, "select count(*) from flyway_schema_history where success"))
+        .isEqualTo(3);
+    assertThat(count(legacy, "select count(*) from decisions where id='" + id + "'")).isEqualTo(1);
+    String fresh = newDatabase();
+    flyway(fresh).migrate();
+    assertThat(fingerprint(legacy)).isEqualTo(fingerprint(fresh));
+  }
+
+  @Test
+  void V3는_이름이_같아도_UNIQUE_정의가_다르면_중단한다() throws Exception {
+    String legacy = newDatabase();
+    Flyway.configure()
+        .dataSource(url(legacy), PG.getUsername(), PG.getPassword())
+        .locations("classpath:db/migration")
+        .target("1")
+        .load()
+        .migrate();
+    exec(legacy, "drop table flyway_schema_history");
+    exec(legacy, "alter table answers drop constraint answers_question_id_key");
+    exec(
+        legacy,
+        "alter table answers add constraint uka8hukb7yjph7wnrlnn8x0fcja unique (decision_id)");
+
+    assertThatThrownBy(
+            () ->
+                Flyway.configure()
+                    .dataSource(url(legacy), PG.getUsername(), PG.getPassword())
+                    .locations("classpath:db/migration")
+                    .baselineOnMigrate(true)
+                    .baselineVersion("1")
+                    .load()
+                    .migrate())
+        .isInstanceOf(FlywayException.class)
+        .hasMessageContaining("예상과 다른 UNIQUE 제약");
+    assertThat(
+            count(
+                legacy,
+                "select count(*) from pg_constraint where conname='answers_question_id_key'"))
+        .isZero();
   }
 }
