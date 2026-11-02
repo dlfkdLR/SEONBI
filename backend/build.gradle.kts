@@ -18,6 +18,9 @@ dependencies {
  implementation("org.apache.commons:commons-math3:3.6.1")
  implementation("com.github.victools:jsonschema-generator:4.37.0")
  implementation("com.github.victools:jsonschema-module-jackson:4.37.0")
+ // DB 스키마는 Flyway SQL 마이그레이션(db/migration)이 관리하고 Hibernate는 검증만 한다. PostgreSQL 지원은 별도 모듈이다
+ implementation("org.flywaydb:flyway-core")
+ runtimeOnly("org.flywaydb:flyway-database-postgresql")
  runtimeOnly("org.postgresql:postgresql")
  testImplementation("org.springframework.boot:spring-boot-starter-test")
  testImplementation("org.testcontainers:junit-jupiter")

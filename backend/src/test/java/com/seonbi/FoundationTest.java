@@ -103,7 +103,8 @@ class FoundationTest {
   void allThirteenTablesExistWithChecksAndCascade() {
     List<?> tables =
         em.createNativeQuery(
-                "select table_name from information_schema.tables where table_schema='public'")
+                "select table_name from information_schema.tables where table_schema='public'"
+                    + " and table_name <> 'flyway_schema_history'") // Flyway 이력 테이블은 앱 테이블이 아니다
             .getResultList();
     assertThat(tables).hasSize(13);
     Number checks =
