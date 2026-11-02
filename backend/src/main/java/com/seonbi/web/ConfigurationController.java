@@ -5,6 +5,7 @@ import com.seonbi.core.ClientId;
 import com.seonbi.dto.Requests.*;
 import com.seonbi.dto.Responses;
 import com.seonbi.service.ConfigurationService;
+import com.seonbi.service.SetupService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -17,10 +18,13 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping(value = "/api/v1/decisions", produces = "application/json")
 public class ConfigurationController {
   private final ConfigurationService service;
+  private final SetupService setup;
   private final ObjectMapper mapper;
 
-  public ConfigurationController(ConfigurationService service, ObjectMapper mapper) {
+  public ConfigurationController(
+      ConfigurationService service, SetupService setup, ObjectMapper mapper) {
     this.service = service;
+    this.setup = setup;
     this.mapper = mapper;
   }
 
@@ -34,6 +38,36 @@ public class ConfigurationController {
   public Responses.CreatedDecision create(
       @ClientId UUID cid, @Valid @RequestBody CreateDecision r) {
     return mapper.convertValue(service.create(cid, r), Responses.CreatedDecision.class);
+  }
+
+  @Operation(
+      operationId = "completeSetup",
+      summary = "9-1. 초기 설정 완료 저장",
+      description =
+          "초기 설정 5단계(제목·후보·평가 기준·값·필수 조건)를 끝낸 뒤 한 번에 보내 결정을 만든다. 결정 ID는 이때 처음 발급되고, 한 트랜잭션이라"
+              + " 하나라도 틀리면 아무것도 저장되지 않는다(400 VALIDATION_ERROR, 409 LIMIT_EXCEEDED, 비어 있는 값이 있으면 422 NOT_READY)."
+              + " 요청의 setupKey가 같으면 다시 만들지 않고 만들어 둔 결정을 200으로 돌려준다(처음 만들면 201). 선택지·기준은 요청 안의"
+              + " ref(임시 이름)로 서로 가리키고, 응답의 ID는 서버가 발급한 값이다. 상태는 DRAFT다.")
+  @PostMapping("/setup")
+  public org.springframework.http.ResponseEntity<Responses.Decision> completeSetup(
+      @ClientId UUID cid, @Valid @RequestBody SetupDecision r) {
+    SetupService.Result result = setup.setup(cid, r);
+    return org.springframework.http.ResponseEntity.status(
+            result.created() ? HttpStatus.CREATED : HttpStatus.OK)
+        .body(mapper.convertValue(result.decision(), Responses.Decision.class));
+  }
+
+  @Operation(
+      operationId = "recommendCriteriaDraft",
+      summary = "9-2. 초기 설정 중 평가 기준 추천 (AI)",
+      description =
+          "결정을 아직 만들지 않은 초기 설정 3단계에서 기준을 추천받는다. 아무것도 저장하지 않는다. 동작은 23번과 같다(상한 초과·AI 실패 시 카테고리별"
+              + " 기본 기준 source=template).")
+  @PostMapping("/criteria/recommendations")
+  public Responses.CriterionRecommendations recommendCriteriaDraft(
+      @ClientId UUID cid, @Valid @RequestBody RecommendCriteriaDraft r) {
+    return mapper.convertValue(
+        service.recommendCriteriaDraft(cid, r), Responses.CriterionRecommendations.class);
   }
 
   @Operation(

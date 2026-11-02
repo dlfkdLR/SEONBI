@@ -41,8 +41,8 @@ for (const label of ['고민 제목', '어디에 사용할 건가요? · 선택'
     if (label !== '후보 1') await page.getByLabel('후보 1', {exact:true}).fill('개발');
     await page.getByLabel('후보 2', {exact:true}).fill('사진');
     await page.getByRole('button', {name:'비교할 항목 고르기',exact:true}).click();
-    await expect(page).toHaveURL(/server-decision-1/);
-    await page.goto('/decisions/server-decision-1/setup/' + (label === '후보 1' ? '2' : '1'));
+    await expect(page).toHaveURL(/decisions\/new\/setup\/3/);
+    await page.goto('/decisions/new/setup/' + (label === '후보 1' ? '2' : '1'));
     await page.reload();
     await expect(page.getByRole('textbox', { name: label, exact: true })).toHaveValue('한글');
   });

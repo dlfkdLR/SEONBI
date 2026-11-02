@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
-import { decisionFixture, mockApi } from './test-api';
+import { decisionFixture, fillFromCriteria, mockApi } from './test-api';
 
-test('제목만 임시 저장하고 새 탭에서 이어 쓴 뒤 서버에 생성하면 중복 카드를 없앤다', async ({ page, context }, info) => {
+test('제목만 임시 저장하고 새 탭에서 이어 쓴 뒤 5단계를 끝내야 서버에 생성되고 중복 카드를 없앤다', async ({ page, context }, info) => {
   const server = await mockApi(page);
   await page.goto('/decisions/new/setup/1');
   await page.getByLabel('고민 제목', { exact: true }).fill('이사할 동네 고르기');
@@ -15,14 +15,18 @@ test('제목만 임시 저장하고 새 탭에서 이어 쓴 뒤 서버에 생�
   await second.locator('.local-draft-card').getByRole('link', { name: '이어서 작성하기' }).click();
   await expect(second.getByLabel('고민 제목', { exact: true })).toHaveValue('이사할 동네 고르기');
   await second.getByRole('button', { name: '후보 적기', exact: true }).click();
-  await second.getByLabel('후보 1', { exact: true }).fill('성수동');
-  await second.getByLabel('후보 2', { exact: true }).fill('합정동');
+  await second.getByLabel('후보 1', { exact: true }).fill('개발 동아리');
+  await second.getByLabel('후보 2', { exact: true }).fill('사진 동아리');
   await second.getByRole('button', { name: '저장하고 나가기' }).click();
   await second.locator('.local-draft-card').getByRole('link', { name: '이어서 작성하기' }).click();
   await expect(second).toHaveURL(/new\/setup\/2$/);
-  await expect(second.getByLabel('후보 1', { exact: true })).toHaveValue('성수동');
+  await expect(second.getByLabel('후보 1', { exact: true })).toHaveValue('개발 동아리');
   await second.getByRole('button', { name: '비교할 항목 고르기', exact: true }).click();
-  await expect(second).toHaveURL(/server-decision-1\/setup\/3$/);
+  await expect(second).toHaveURL(/new\/setup\/3$/);
+  expect(secondServer.records.size).toBe(0); // 5단계를 끝내기 전에는 서버에 결정이 없다
+  await fillFromCriteria(second);
+  await second.getByRole('button', { name: '조건 없이 시작할게요' }).click();
+  await expect(second).toHaveURL(/server-decision-1\/questions$/);
   expect(secondServer.records.get('server-decision-1')?.title).toBe('이사할 동네 고르기');
   await second.goto('/decisions');
   await expect(second.locator('.local-draft-card')).toHaveCount(0);
