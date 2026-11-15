@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { notifyManager, QueryClient, useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Decision } from '../domain/types';
 import { repository, rebaseDraft } from './repository';
@@ -19,9 +19,10 @@ export function useDecision(id: string) {
   const [draft, setDraft] = useState<Decision>(), [isSaving, setSaving] = useState(false);
   const saving = useRef(false);
   const query = useQuery({ queryKey: ['decision', owner, id], queryFn: () => repository.get(id), enabled: id !== 'new' });
-  const [blank] = useState(() => readNewDecisionDraft(owner));
+  // 새 결정 화면으로 (다시) 들어올 때마다 저장소에서 새로 읽는다. 같은 라우트가 유지된 채 id만 바뀌면 이전 입력이 남아 보이기 때문이다
+  const blank = useMemo(() => id === 'new' ? readNewDecisionDraft(owner) : undefined, [id, owner]);
   useEffect(() => { setDraft(undefined); }, [id]);
-  const data = draft ?? query.data ?? (id === 'new' ? blank : undefined);
+  const data = draft ?? query.data ?? blank;
   const update = (updater: (d: Decision) => void): boolean => {
     if (!data || data.status === 'FINALIZED' || saving.current) return false;
     setDraft(previous => { const next = structuredClone(previous ?? data); updater(next); return next; });

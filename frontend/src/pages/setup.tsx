@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import type { Category, CellValue, Condition, Criterion, Decision } from '../domain/types';
@@ -31,12 +31,14 @@ export default function SetupPage() {
   const owner = useOwner();
   const { id = '', step: stepParam = '1' } = useParams(), step = Number(stepParam);
   const { data: d, isPending, error, update, save, complete, isSaving, dirty } = useDecision(id), navigate = useNavigate(), notify = useUI(s => s.notify);
+  // 질문 시작은 '결정 저장 → 질문 시작 API → 화면 이동'까지가 한 번의 작업이다. 저장 잠금(isSaving)만으로는 중간에 풀리므로 따로 잠근다
+  const starting = useRef(false), [startBusy, setStartBusy] = useState(false), busy = isSaving || startBusy;
   const [errors, setErrors] = useState<string[]>([]), [editing, setEditing] = useState<Criterion | 'new' | null>(null);
   const [valueIndex, setValueIndex] = useState(0), [tagOpen, setTagOpen] = useState(false), [thresholdOpen, setThresholdOpen] = useState(false);
   const [pausedConditions, setPausedConditions] = useState<Condition[]>([]), [available, setAvailable] = useState<Criterion[]>([]);
   // 아직 서버에 결정이 없는 새 결정은 제목·후보만 보내 추천을 받는다(아무것도 저장되지 않는다)
   const draftNames = id === 'new' && d ? d.options.map(o => o.name.trim()).filter(Boolean) : [];
-  const suggestions = useQuery({ queryKey: ['criterion-recommendations', id, ...(id === 'new' && d ? [d.title.trim(), d.category, draftNames.join('|')] : [])], enabled: !!d && step === 3,
+  const suggestions = useQuery({ queryKey: ['criterion-recommendations', owner, id, ...(id === 'new' && d ? [d.title.trim(), d.description, d.category, draftNames.join('|')] : [])], enabled: !!d && step === 3,
     queryFn: async () => (id === 'new' && d
       ? await api.request('recommendCriteriaDraft', { body: { title: d.title.trim(), description: d.description, category: d.category, options: draftNames } })
       : await api.request('recommendCriteria', { params: { decisionId: id } })) as { items: CriterionDto[] }, staleTime: Infinity });
@@ -45,7 +47,8 @@ export default function SetupPage() {
   useEffect(() => {
     if (!d || !Array.isArray(suggestions.data?.items)) return;
     setAvailable(suggestions.data.items.filter(c => !hiddenRecommendations.has(c.name.trim())).map(c => phoneCriterion({ ...criterion(c.name, c.type, c.direction, c.unit), ...c, id: uid(), unit: c.unit ?? '', levels: c.levels ?? criterion('', 'rating').levels, inputMode: c.inputMode ?? 'score', source: 'ai_recommended' }, d)));
-  }, [suggestions.data, d?.title, d?.options]);
+  // 후보 이름이 실제로 바뀔 때만 다시 만든다. d.options는 수정할 때마다 새 객체라 그대로 쓰면 항목을 고를 때마다 목록 id가 바뀌고, 직접 추가한 항목이 사라진다
+  }, [suggestions.data, d?.title, d?.options.map(o => o.name).join('\u0000')]);
   useEffect(() => {
     if (!d || d.status !== 'DRAFT' || step !== 3 || d.criteria.some(c => c.name === '배터리 용량') || !d.criteria.some(c => phoneCriterion(c, d) !== c)) return;
     update(x => {
@@ -69,7 +72,7 @@ export default function SetupPage() {
   const locked = d.status === 'FINALIZED', active = d.criteria[Math.min(valueIndex, Math.max(0, d.criteria.length - 1))];
   const path = (to: number, nextId = id) => `/decisions/${nextId}/setup/${to}`;
   const goStep = async (to: number) => {
-    if (isSaving) return;
+    if (busy) return;
     let missing: string[] = [];
     if (to > step) missing = step === 1 ? (!d.title.trim() ? ['고민 제목을 입력해주세요.'] : []) : validationErrors(d, step - 1);
     if (missing.length) { setErrors(missing); return; }
@@ -80,7 +83,7 @@ export default function SetupPage() {
     else setErrors(['저장하지 못했어요. 입력 내용은 그대로예요. 연결 상태를 확인한 뒤 다시 시도해주세요.']);
   };
   const saveDraft = async (exit = false) => {
-    if (isSaving) return;
+    if (busy) return;
     if (!d.title.trim()) { setErrors(['고민 제목을 입력해주세요.']); return; }
     if (id === 'new') {
       if (!saveNewDecisionDraft(owner, d, step as SetupStep)) {
@@ -116,14 +119,23 @@ export default function SetupPage() {
     update(x => { x.options = x.options.filter(o => o.id !== optionId); delete x.values[optionId]; x.conditions.forEach(c => { if (c.kind === 'required_tag') c.satisfiedBy = c.satisfiedBy.filter(v => v !== optionId); }); });
   };
   const start = async (skip = false) => {
-    if (isSaving) return;
+    if (busy || starting.current) return;
+    starting.current = true; setStartBusy(true);
+    try { await runStart(skip); } finally { starting.current = false; setStartBusy(false); }
+  };
+  const runStart = async (skip: boolean) => {
     const missing = validationErrors(d); if (missing.length) { setErrors(missing); return; }
     // Skipping is explicit and reversible; only active conditions reach the API.
     // 새 결정이면 여기서 처음 서버에 저장되고 결정 ID가 발급된다. 실패하면 서버에는 아무것도 남지 않고 입력은 그대로다
     const target = skip ? { ...d, conditions: [] } : undefined;
     const saved = await (id === 'new' ? complete(target) : save(target));
     if (!saved) { setErrors(['저장하지 못했어요. 입력 내용을 유지했으니 다시 시도해주세요.']); return; }
-    if (!saved.readiness?.canStartQuestions) { setErrors(['아직 질문을 시작할 수 없어요. 후보와 비교 항목의 입력값을 확인해주세요.']); return; }
+    if (!saved.readiness?.canStartQuestions) {
+      const message = '아직 질문을 시작할 수 없어요. 후보와 비교 항목의 입력값을 확인해주세요.';
+      // 새 결정은 이미 서버에 만들어졌고 임시 입력·멱등 키도 지워졌다. 이 화면에 남으면 다시 눌렀을 때 같은 결정이 하나 더 생기므로 저장된 결정으로 옮긴다
+      if (id === 'new') { notify(`결정은 저장했어요. ${message}`); navigate(path(5, saved.id), { replace: true }); } else setErrors([message]);
+      return;
+    }
     try {
       const started = await api.request('startQuestions', { params: { decisionId: saved.id } }) as { status?: string };
       await cache.invalidateQueries(); // 상태가 바뀌었으니 캐시된 결정·질문을 다시 읽게 한다
@@ -149,9 +161,9 @@ export default function SetupPage() {
     if (enabled) { update(x => { x.conditions.push(c); }); setPausedConditions(v => v.filter(k => k.id !== c.id)); }
     else { update(x => { x.conditions = x.conditions.filter(k => k.id !== c.id); }); setPausedConditions(v => [...v, c]); }
   };
-  return <main className={`page setup-page setup-step-${step}`} id="main"><div className="page-content" inert={isSaving}>
-    <div className="setup-topbar"><p className="eyebrow stage">{step <= 4 ? `새 결정 · ${step} / 4` : '필수 조건 · 선택 사항'}</p>{!locked && <div className="save-actions"><TextButton disabled={isSaving} onClick={() => void saveDraft()}>임시 저장</TextButton><Button secondary disabled={isSaving} onClick={() => void saveDraft(true)}>저장하고 나가기</Button></div>}</div>
-    {!locked && <p className="save-hint">{isSaving ? '저장 중…' : id === 'new' ? '임시 저장한 내용은 이 브라우저에서 이어 쓸 수 있어요.' : dirty ? '저장하지 않은 변경사항이 있어요.' : '서버에 저장한 내용이에요.'}</p>}
+  return <main className={`page setup-page setup-step-${step}`} id="main"><div className="page-content" inert={busy}>
+    <div className="setup-topbar"><p className="eyebrow stage">{step <= 4 ? `새 결정 · ${step} / 4` : '필수 조건 · 선택 사항'}</p>{!locked && <div className="save-actions"><TextButton disabled={busy} onClick={() => void saveDraft()}>임시 저장</TextButton><Button secondary disabled={busy} onClick={() => void saveDraft(true)}>저장하고 나가기</Button></div>}</div>
+    {!locked && <p className="save-hint">{busy ? '저장 중…' : id === 'new' ? '임시 저장한 내용은 이 브라우저에서 이어 쓸 수 있어요.' : dirty ? '저장하지 않은 변경사항이 있어요.' : '서버에 저장한 내용이에요.'}</p>}
     {step !== 4 && <PageHeading title={titles[step - 1]} description={descriptions[step - 1]} />}
     {locked && <div className="notice">확정한 결정이에요. 다시 고민하고 싶다면 결과에서 복제해주세요. <Link to={`/decisions/${id}/result`}>결과 보기 ›</Link></div>}
     {step === 1 && <fieldset disabled={locked} className="surface topic-form"><Field label="고민 제목" value={d.title} onValueChange={value => update(x => { x.title = value; })} placeholder="예: 새 노트북 고르기" maxLength={100} autoFocus /><Field label="어디에 사용할 건가요? · 선택" value={d.description} onValueChange={value => update(x => { x.description = value; })} placeholder="예: 통학하면서 학교 개발 수업에 쓸 노트북" maxLength={1000} /><details className="advanced"><summary>고민 종류 선택 · 선택</summary><label className="field">고민 종류<select value={d.category} onChange={e => update(x => { x.category = e.target.value as Category; })}>{Object.entries(categories).map(([v, name]) => <option key={v} value={v}>{name}</option>)}</select><small>비교 항목을 제안할 때만 참고해요.</small></label></details></fieldset>}
@@ -165,7 +177,7 @@ export default function SetupPage() {
       <div className="condition-add"><TextButton disabled={locked || !d.criteria.some(c => c.type === 'numeric')} onClick={() => setThresholdOpen(true)}>+ 숫자 조건 추가</TextButton><TextButton disabled={locked} onClick={() => setTagOpen(true)}>+ 꼭 필요한 조건 추가</TextButton></div>
       <p className="caption centered" role="status">{!d.conditions.length ? '필수 조건이 없다면 모든 후보를 비교해요. 그냥 넘어가도 괜찮아요.' : eligible.length ? `입력한 조건으로는 ${withParticle(eligible.map(o => o.name).join(', '), '이', '가')} 비교에 남아요.` : '모든 후보가 조건에 맞지 않거나 정보가 부족해요. 조건과 입력값을 다시 확인해주세요.'}</p><details className="condition-preview"><summary>후보별 조건 확인</summary>{preview.map(o => <p key={o.id}>{o.name} <span className="muted">{o.reasons.length ? `· 제외: ${o.reasons.join(', ')}` : o.unknown.length ? `· ${o.unknown.join(', ')} 정보 필요` : '· 조건에 맞아요'}</span></p>)}<small>입력 기준의 미리보기예요. 질문을 시작할 때 저장한 조건을 다시 확인해요.</small></details></>}
     {errors.length > 0 && <ErrorNotice message={errors.slice(0, 4).join(' ')} />}
-  </div><footer className="page-footer"><TextButton disabled={isSaving} onClick={() => step === 1 ? navigate('/') : void goStep(step - 1)}>{backLabels[step - 1]}</TextButton><div className="footer-actions">{step === 5 && !locked && <TextButton disabled={isSaving} onClick={() => void start(true)}>조건 없이 시작할게요</TextButton>}{step === 4 ? <small>선택한 항목을 차례로 입력하면 돼요.</small> : locked ? <Button onClick={() => navigate(`/decisions/${id}/result`)}>결과로 돌아가기</Button> : <Button disabled={isSaving} onClick={() => step === 5 ? void start() : void goStep(step + 1)}>{isSaving ? '저장 중…' : nextLabels[step - 1]}</Button>}</div></footer>
+  </div><footer className="page-footer"><TextButton disabled={busy} onClick={() => step === 1 ? navigate('/') : void goStep(step - 1)}>{backLabels[step - 1]}</TextButton><div className="footer-actions">{step === 5 && !locked && <TextButton disabled={busy} onClick={() => void start(true)}>조건 없이 시작할게요</TextButton>}{step === 4 ? <small>선택한 항목을 차례로 입력하면 돼요.</small> : locked ? <Button onClick={() => navigate(`/decisions/${id}/result`)}>결과로 돌아가기</Button> : <Button disabled={busy} onClick={() => step === 5 ? void start() : void goStep(step + 1)}>{busy ? '저장 중…' : nextLabels[step - 1]}</Button>}</div></footer>
 
     {editing && <CriterionEditor initial={editing === 'new' ? undefined : editing} existingNames={d.criteria.filter(c => editing === 'new' || c.id !== editing.id).map(c => c.name)} onSave={saveCriterion} onClose={() => setEditing(null)} />}
     {tagOpen && <TagCondition d={d} onClose={() => setTagOpen(false)} onSave={c => { update(x => { x.conditions.push(c); }); setTagOpen(false); }} />}{thresholdOpen && <ThresholdCondition d={d} onClose={() => setThresholdOpen(false)} onSave={c => { update(x => { x.conditions.push(c); }); setThresholdOpen(false); }} />}

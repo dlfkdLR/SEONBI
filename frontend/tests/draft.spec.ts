@@ -82,3 +82,24 @@ test('응답을 받지 못해 같은 내용을 다시 보내도 같은 멱등 �
   expect(keys).toHaveLength(2);
   expect(keys[0]).toBe(keys[1]);
 });
+
+test('질문 시작 응답을 기다리는 동안에도 버튼이 잠겨 있어 결정이 하나만 생긴다', async ({ page }) => {
+  const server = await mockApi(page);
+  await fillDraft(page);
+  await page.getByRole('button', { name: '비교할 항목 고르기', exact: true }).click();
+  await fillFromCriteria(page);
+  // 질문 시작 응답을 붙잡아 둔다. 결정 저장은 끝났지만 아직 화면은 /decisions/new 인 구간이다
+  let release!: () => void, held!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; }), reached = new Promise<void>(resolve => { held = resolve; });
+  await page.route('**/api/v1/decisions/*/questions/start', async route => { held(); await gate; await route.fallback(); });
+  await page.getByRole('button', { name: '조건 없이 시작할게요' }).click();
+  await reached; // 결정 저장이 끝나고 질문 시작 요청이 서버로 나간 시점
+  expect(server.records.size).toBe(1);
+  await expect(page).toHaveURL(/decisions\/new\/setup\/5/);
+  await expect(page.getByRole('button', { name: '조건 없이 시작할게요' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: '저장 중…' })).toBeDisabled();
+  release();
+  await expect(page).toHaveURL(/server-decision-1\/questions/);
+  expect(server.records.size).toBe(1);
+  expect(server.calls.filter(c => c.path.endsWith('/decisions/setup'))).toHaveLength(1);
+});
