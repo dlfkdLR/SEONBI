@@ -21,17 +21,32 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@Testcontainers
 @Import(FoundationTest.Probe.class)
 class FoundationTest {
-  @Container static final PostgreSQLContainer<?> DB = new PostgreSQLContainer<>("postgres:16.4");
+  // Docker가 없는 PC에서는 SEONBI_TEST_DB_URL(+_USER/_PASSWORD)로 이미 떠 있는 PostgreSQL을 대신 쓸 수 있다
+  static final String EXTERNAL_DB = System.getenv("SEONBI_TEST_DB_URL");
+  static final PostgreSQLContainer<?> DB =
+      EXTERNAL_DB == null ? new PostgreSQLContainer<>("postgres:16.4") : null;
+
+  static {
+    if (DB != null) DB.start();
+  }
 
   @DynamicPropertySource
   static void database(DynamicPropertyRegistry r) {
+    if (EXTERNAL_DB != null) {
+      r.add("spring.datasource.url", () -> EXTERNAL_DB);
+      r.add(
+          "spring.datasource.username",
+          () -> System.getenv().getOrDefault("SEONBI_TEST_DB_USER", "seonbi"));
+      r.add(
+          "spring.datasource.password",
+          () -> System.getenv().getOrDefault("SEONBI_TEST_DB_PASSWORD", ""));
+      return;
+    }
     r.add("spring.datasource.url", DB::getJdbcUrl);
     r.add("spring.datasource.username", DB::getUsername);
     r.add("spring.datasource.password", DB::getPassword);
@@ -100,13 +115,13 @@ class FoundationTest {
   }
 
   @Test
-  void allThirteenTablesExistWithChecksAndCascade() {
+  void allFourteenTablesExistWithChecksAndCascade() {
     List<?> tables =
         em.createNativeQuery(
                 "select table_name from information_schema.tables where table_schema='public'"
                     + " and table_name <> 'flyway_schema_history'") // Flyway 이력 테이블은 앱 테이블이 아니다
             .getResultList();
-    assertThat(tables).hasSize(13);
+    assertThat(tables).hasSize(14); // 결정 관련 13개 + 기록 이동 코드(transfer_codes)
     Number checks =
         (Number)
             em.createNativeQuery(

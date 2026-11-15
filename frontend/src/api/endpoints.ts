@@ -46,6 +46,10 @@ export const endpoints = {
   stability: { method: 'GET', path: '/api/v1/decisions/{decisionId}/stability' },
   changeConditions: { method: 'GET', path: '/api/v1/decisions/{decisionId}/change-conditions' },
   finalizeDecision: { method: 'POST', path: '/api/v1/decisions/{decisionId}/final-choice' },
+  /** 49-1번: 옛 기기에서 10분짜리 일회용 이동 코드를 받는다 */
+  issueTransferCode: { method: 'POST', path: '/api/v1/transfers' },
+  /** 49-2번: 새 기기에서 코드를 내고 옛 기기의 clientId를 이어받는다 */
+  claimTransferCode: { method: 'POST', path: '/api/v1/transfers/claim' },
   exportDecision: { method: 'GET', path: '/api/v1/decisions/{decisionId}/export' },
 } as const;
 export type EndpointName = keyof typeof endpoints;

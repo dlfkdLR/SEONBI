@@ -71,6 +71,16 @@ export function retainNewDecisionDraft(owner: string, decision: Decision): boole
   } catch { return false; }
 }
 
+/** 기록 이동으로 브라우저 ID가 바뀌면, 이 기기에 저장해 둔 작성 중 임시 저장도 새 ID 쪽으로 옮긴다(이미 있으면 덮어쓰지 않는다). */
+export function moveNewDecisionDraft(from: string, to: string): void {
+  if (from === to) return;
+  try {
+    const raw = localStorage.getItem(storageKey(from));
+    if (raw && localStorage.getItem(storageKey(to)) === null) localStorage.setItem(storageKey(to), raw);
+    localStorage.removeItem(storageKey(from));
+  } catch { /* 저장소를 못 쓰면 임시 저장은 옮기지 못하지만 서버 기록 이동에는 영향이 없다. */ }
+}
+
 export function clearNewDecisionDraft(owner: string): void {
   try { sessionStorage.removeItem(storageKey(owner)); } catch { /* Best effort after a successful server save. */ }
   try { localStorage.removeItem(storageKey(owner)); } catch { /* Storage may be unavailable. */ }

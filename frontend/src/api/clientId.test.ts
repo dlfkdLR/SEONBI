@@ -7,3 +7,5 @@ it('기존 ID를 재발급하지 않고 표준 키로 이어받는다',()=>{loca
 it('C에서 사용하던 표준 ID를 다른 ID로 덮어쓰지 않는다',()=>{localStorage.setItem('seonbi.clientId','current-id');localStorage.setItem('seonbi.client-id','legacy-id');expect(getClientId()).toBe('current-id');expect(localStorage.getItem('seonbi.client-id')).toBe('legacy-id');});
 
 it('저장소가 차단되어도 같은 페이지에서는 동일한 임시 ID를 쓴다',()=>{vi.stubGlobal('localStorage',{getItem:()=>{throw new Error('blocked');},setItem:()=>{throw new Error('blocked');}});const id=getClientId();expect(getClientId()).toBe(id);expect(id).toMatch(/^[0-9a-f-]{36}$/);});
+
+it('기록 이동으로 받은 ID로 바꾸면 저장소와 이후 조회가 모두 새 ID를 쓴다',async()=>{const {setClientId}=await import('./clientId');const old=getClientId();setClientId('11111111-1111-4111-8111-111111111111');expect(getClientId()).toBe('11111111-1111-4111-8111-111111111111');expect(localStorage.getItem('seonbi.clientId')).toBe('11111111-1111-4111-8111-111111111111');expect(old).not.toBe(getClientId());});

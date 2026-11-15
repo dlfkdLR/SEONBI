@@ -38,3 +38,9 @@ export function getClientId(): string {
   }
   return memoryClientId;
 }
+
+/** 기록 이동(49-2번)으로 받은 옛 기기의 ID를 이 브라우저의 ID로 바꾼다. 이후 모든 요청의 X-Client-Id가 된다. */
+export function setClientId(id: string): void {
+  memoryClientId = id;
+  try { globalThis.localStorage?.setItem(STORAGE_KEY, id); } catch { /* 저장소가 막혀 있으면 이 페이지 세션 동안만 쓴다. */ }
+}
