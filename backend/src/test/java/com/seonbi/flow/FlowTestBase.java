@@ -28,12 +28,25 @@ abstract class FlowTestBase {
   // 테스트 클래스 여러 개가 한 DB 컨테이너를 같이 쓴다 (JVM이 끝나면 정리된다)
   static final PostgreSQLContainer<?> DB = new PostgreSQLContainer<>("postgres:16.4");
 
+  // Docker가 없는 PC에서는 SEONBI_TEST_DB_URL(+_USER/_PASSWORD)로 이미 떠 있는 PostgreSQL을 대신 쓸 수 있다
+  static final String EXTERNAL_DB = System.getenv("SEONBI_TEST_DB_URL");
+
   static {
-    DB.start();
+    if (EXTERNAL_DB == null) DB.start();
   }
 
   @DynamicPropertySource
   static void database(DynamicPropertyRegistry r) {
+    if (EXTERNAL_DB != null) {
+      r.add("spring.datasource.url", () -> EXTERNAL_DB);
+      r.add(
+          "spring.datasource.username",
+          () -> System.getenv().getOrDefault("SEONBI_TEST_DB_USER", "seonbi"));
+      r.add(
+          "spring.datasource.password",
+          () -> System.getenv().getOrDefault("SEONBI_TEST_DB_PASSWORD", ""));
+      return;
+    }
     r.add("spring.datasource.url", DB::getJdbcUrl);
     r.add("spring.datasource.username", DB::getUsername);
     r.add("spring.datasource.password", DB::getPassword);

@@ -37,17 +37,35 @@ import org.testcontainers.containers.PostgreSQLContainer;
  */
 class FlywayMigrationTest {
 
-  static final PostgreSQLContainer<?> PG = new PostgreSQLContainer<>("postgres:16.4");
+  // Docker가 없으면 SEONBI_TEST_DB_URL(+_USER/_PASSWORD)의 PostgreSQL 서버를 쓴다(테스트마다 새 DB를 만든다)
+  static final String EXT_URL = System.getenv("SEONBI_TEST_DB_URL");
+  static final PostgreSQLContainer<?> PG =
+      EXT_URL == null ? new PostgreSQLContainer<>("postgres:16.4") : null;
 
   static {
-    PG.start();
+    if (PG != null) PG.start();
+  }
+
+  private static String baseUrl() {
+    return EXT_URL != null ? EXT_URL : PG.getJdbcUrl();
+  }
+
+  private static String user() {
+    return EXT_URL != null
+        ? System.getenv().getOrDefault("SEONBI_TEST_DB_USER", "seonbi")
+        : PG.getUsername();
+  }
+
+  private static String pass() {
+    return EXT_URL != null
+        ? System.getenv().getOrDefault("SEONBI_TEST_DB_PASSWORD", "")
+        : PG.getPassword();
   }
 
   /** 서버 안에 테스트마다 새 데이터베이스를 만든다. */
   private static String newDatabase() throws SQLException {
     String name = "t_" + UUID.randomUUID().toString().replace("-", "");
-    try (Connection c =
-            DriverManager.getConnection(PG.getJdbcUrl(), PG.getUsername(), PG.getPassword());
+    try (Connection c = DriverManager.getConnection(baseUrl(), user(), pass());
         Statement s = c.createStatement()) {
       s.execute("create database " + name);
     }
@@ -55,16 +73,16 @@ class FlywayMigrationTest {
   }
 
   private static String url(String db) {
-    return PG.getJdbcUrl().replaceFirst("/[^/?]+(\\?|$)", "/" + db + "$1");
+    return baseUrl().replaceFirst("/[^/?]+(\\?|$)", "/" + db + "$1");
   }
 
   private static Connection connect(String db) throws SQLException {
-    return DriverManager.getConnection(url(db), PG.getUsername(), PG.getPassword());
+    return DriverManager.getConnection(url(db), user(), pass());
   }
 
   private static Flyway flyway(String db) {
     return Flyway.configure()
-        .dataSource(url(db), PG.getUsername(), PG.getPassword())
+        .dataSource(url(db), user(), pass())
         .locations("classpath:db/migration")
         .baselineOnMigrate(false)
         .cleanDisabled(true)
@@ -103,8 +121,8 @@ class FlywayMigrationTest {
     StandardServiceRegistry registry =
         new StandardServiceRegistryBuilder()
             .applySetting("hibernate.connection.url", url(db))
-            .applySetting("hibernate.connection.username", PG.getUsername())
-            .applySetting("hibernate.connection.password", PG.getPassword())
+            .applySetting("hibernate.connection.username", user())
+            .applySetting("hibernate.connection.password", pass())
             .applySetting("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect")
             .applySetting("hibernate.hbm2ddl.auto", "create") // SessionFactory 를 만들 때 테이블을 만든다
             .build();
@@ -157,13 +175,14 @@ class FlywayMigrationTest {
           "free_text_inputs",
           "option_values",
           "options",
-          "questions");
+          "questions",
+          "transfer_codes");
 
   @Test
   void 빈_DB에_모든_테이블이_만들어지고_다시_실행해도_아무것도_바뀌지_않는다() throws Exception {
     String db = newDatabase();
     var first = flyway(db).migrate();
-    assertThat(first.migrationsExecuted).isEqualTo(3);
+    assertThat(first.migrationsExecuted).isEqualTo(4);
     List<String> expected = new ArrayList<>(APP_TABLES);
     expected.add("flyway_schema_history");
     expected.sort(null);
@@ -172,7 +191,7 @@ class FlywayMigrationTest {
     var again = flyway(db).migrate(); // 재실행: 이미 적용된 것은 건너뛴다
     assertThat(again.migrationsExecuted).isZero();
     flyway(db).validate(); // 적용한 파일이 그대로인지(체크섬) 확인
-    assertThat(count(db, "select count(*) from flyway_schema_history where success")).isEqualTo(3);
+    assertThat(count(db, "select count(*) from flyway_schema_history where success")).isEqualTo(4);
   }
 
   @Test
@@ -257,7 +276,7 @@ class FlywayMigrationTest {
     String legacy = newDatabase();
     Flyway v1Only =
         Flyway.configure()
-            .dataSource(url(legacy), PG.getUsername(), PG.getPassword())
+            .dataSource(url(legacy), user(), pass())
             .locations("classpath:db/migration")
             .target("1")
             .load();
@@ -270,13 +289,13 @@ class FlywayMigrationTest {
             .formatted(id, UUID.randomUUID()));
 
     Flyway.configure()
-        .dataSource(url(legacy), PG.getUsername(), PG.getPassword())
+        .dataSource(url(legacy), user(), pass())
         .locations("classpath:db/migration")
         .baselineVersion("1")
         .load()
         .baseline();
     var result = flyway(legacy).migrate();
-    assertThat(result.migrationsExecuted).isEqualTo(2); // V2 와 V3
+    assertThat(result.migrationsExecuted).isEqualTo(3); // V2, V3, V4
     assertThat(count(legacy, "select count(*) from decisions where id='" + id + "'")).isEqualTo(1);
     assertThat(
             count(
@@ -288,12 +307,12 @@ class FlywayMigrationTest {
     String updated = newDatabase();
     hibernateCreate(updated);
     Flyway.configure()
-        .dataSource(url(updated), PG.getUsername(), PG.getPassword())
+        .dataSource(url(updated), user(), pass())
         .locations("classpath:db/migration")
         .baselineVersion("1")
         .load()
         .baseline();
-    assertThat(flyway(updated).migrate().migrationsExecuted).isEqualTo(2);
+    assertThat(flyway(updated).migrate().migrationsExecuted).isEqualTo(3);
     String fresh = newDatabase();
     flyway(fresh).migrate();
     assertThat(fingerprint(updated)).isEqualTo(fingerprint(fresh));
@@ -303,7 +322,7 @@ class FlywayMigrationTest {
   void 운영_DB의_옛_UNIQUE_이름을_V3에서_맞추고_기존_행은_보존한다() throws Exception {
     String legacy = newDatabase();
     Flyway.configure()
-        .dataSource(url(legacy), PG.getUsername(), PG.getPassword())
+        .dataSource(url(legacy), user(), pass())
         .locations("classpath:db/migration")
         .target("1")
         .load()
@@ -329,15 +348,15 @@ class FlywayMigrationTest {
 
     var result =
         Flyway.configure()
-            .dataSource(url(legacy), PG.getUsername(), PG.getPassword())
+            .dataSource(url(legacy), user(), pass())
             .locations("classpath:db/migration")
             .baselineOnMigrate(true)
             .baselineVersion("1")
             .load()
             .migrate();
-    assertThat(result.migrationsExecuted).isEqualTo(2); // V2 와 V3
+    assertThat(result.migrationsExecuted).isEqualTo(3); // V2, V3, V4
     assertThat(count(legacy, "select count(*) from flyway_schema_history where success"))
-        .isEqualTo(3);
+        .isEqualTo(4);
     assertThat(count(legacy, "select count(*) from decisions where id='" + id + "'")).isEqualTo(1);
     String fresh = newDatabase();
     flyway(fresh).migrate();
@@ -348,7 +367,7 @@ class FlywayMigrationTest {
   void V3는_이름이_같아도_UNIQUE_정의가_다르면_중단한다() throws Exception {
     String legacy = newDatabase();
     Flyway.configure()
-        .dataSource(url(legacy), PG.getUsername(), PG.getPassword())
+        .dataSource(url(legacy), user(), pass())
         .locations("classpath:db/migration")
         .target("1")
         .load()
@@ -362,7 +381,7 @@ class FlywayMigrationTest {
     assertThatThrownBy(
             () ->
                 Flyway.configure()
-                    .dataSource(url(legacy), PG.getUsername(), PG.getPassword())
+                    .dataSource(url(legacy), user(), pass())
                     .locations("classpath:db/migration")
                     .baselineOnMigrate(true)
                     .baselineVersion("1")

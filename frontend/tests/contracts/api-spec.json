@@ -45,6 +45,16 @@
     "path": "/api/v1/decisions/{decisionId}/duplicate"
   },
   {
+    "number": "49-1",
+    "method": "POST",
+    "path": "/api/v1/transfers"
+  },
+  {
+    "number": "49-2",
+    "method": "POST",
+    "path": "/api/v1/transfers/claim"
+  },
+  {
     "number": 14,
     "method": "POST",
     "path": "/api/v1/decisions/{decisionId}/options"
