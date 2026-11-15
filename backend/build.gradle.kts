@@ -46,3 +46,20 @@ tasks.register<JavaExec>("simulate") {
  mainClass = "com.seonbi.engine.sim.Simulation"
  args = (project.findProperty("args") as String?)?.split(" ") ?: listOf("--quick")
 }
+
+// 종료 규칙·질문 수 보정 실험 (개선사항 3). 예: ./gradlew calibrate -Pargs="--users 150"
+tasks.register<JavaExec>("calibrate") {
+ group = "verification"
+ description = "가상 사용자로 종료 규칙(확신 임계값·정보 이득·질문 상한)을 훑어 보는 보정 실험"
+ classpath = sourceSets["test"].runtimeClasspath
+ mainClass = "com.seonbi.engine.sim.Calibration"
+ args = (project.findProperty("args") as String?)?.split(" ") ?: listOf("--users", "30")
+}
+
+// 범용 AI 비교 실험의 입력·선비 결과 JSON (개선사항 4). 예: ./gradlew aiCompareFixture -q
+tasks.register<JavaExec>("aiCompareFixture") {
+ group = "verification"
+ description = "범용 AI 비교 실험용 가상 사용자 답변과 선비 엔진 결과를 JSON으로 출력"
+ classpath = sourceSets["test"].runtimeClasspath
+ mainClass = "com.seonbi.engine.sim.AiCompareFixture"
+}
